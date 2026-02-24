@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Turtle Game Test</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: sans-serif;
+            overflow: hidden;
+            background: #f5f5f5;
+        }
+
+        header {
+            background: #333;
+            color: white;
+            padding: 0.75rem 1rem;
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        #hud {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            margin-left: auto;
+            font-size: 0.9rem;
+        }
+
+        #manna-wrap {
+            width: 100px; height: 10px;
+            border: 1px solid #aaa;
+            border-radius: 5px;
+            overflow: hidden;
+            background: #555;
+        }
+
+        #manna {
+            height: 100%; width: 0%;
+            background: linear-gradient(90deg, #4caf50, #8bc34a);
+            transition: width 0.2s ease;
+        }
+
+        footer {
+            background: #eee;
+            border-top: 2px solid #ccc;
+            padding: 0.4rem 1rem;
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            z-index: 200;
+            font-size: 0.85rem;
+            color: #555;
+        }
+
+        /* Instructions panel pinned below header, never overlaps turtle */
+        #instructions {
+            position: fixed;
+            top: 56px; /* sits just below header */
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 0.6rem 1.4rem;
+            text-align: center;
+            color: #444;
+            font-size: 0.9rem;
+            line-height: 1.8;
+            z-index: 150;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+            white-space: nowrap;
+        }
+
+        #instructions kbd {
+            background: #eee;
+            border: 1px solid #bbb;
+            border-radius: 4px;
+            padding: 1px 6px;
+            font-size: 0.85rem;
+            font-family: monospace;
+        }
+
+        #instructions.hidden {
+            display: none;
+        }
+
+        #turtle {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 100;
+            cursor: pointer;
+            overflow: visible;
+        }
+
+        #turtle:focus {
+            outline: 3px solid #4caf50;
+            outline-offset: 4px;
+        }
+
+        /* No outline once moving — .active class removed on first keypress */
+        #turtle.active {
+            outline: none;
+        }
+
+        #collectible {
+            position: fixed;
+            font-size: 1.8rem;
+            pointer-events: none;
+            z-index: 100;
+            transform: translate(-50%, -50%);
+        }
+
+        @keyframes floatUp {
+            0%   { opacity: 1; transform: translate(-50%, 0); }
+            100% { opacity: 0; transform: translate(-50%, -50px); }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <span>🐢 Turtle Game</span>
+    <div id="hud">
+        <span id="score">Score: 0</span>
+        <span id="collected">Collected: </span>
+        <div id="manna-wrap"><div id="manna"></div></div>
+    </div>
+</header>
+
+<div id="instructions">
+    <strong>How to play:</strong>
+    Click the 🐢 turtle to activate it, then use
+    <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> or
+    <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> to move.
+    Press <kbd>Esc</kbd> to release controls.
+</div>
+
+<svg id="turtle"
+     xmlns="http://www.w3.org/2000/svg"
+     viewBox="100 30 480 340"
+     width="60" height="40"
+     role="application"
+     tabindex="0"
+     aria-label="Turtle. Click to activate, then use arrow keys to move. Press Escape to release.">
+    <polygon fill="lightgreen" stroke="darkgreen" stroke-width="15" points="
+        536,200 504,168 440,184 392,136 424,88 408,56
+        360,104 296,88 232,120 184,72 152,104 200,136
+        168,200 200,264 152,296 184,328 232,280 296,312
+        360,296 408,344 424,312 392,264 440,216 504,232
+    "/>
+</svg>
+
+<div id="collectible"></div>
+
+<footer>C0 public domain</footer>
+
+<script>
+    const turtle        = document.getElementById('turtle');
+    const collectibleEl = document.getElementById('collectible');
+    const scoreEl       = document.getElementById('score');
+    const collectedEl   = document.getElementById('collected');
+    const mannaBarEl    = document.getElementById('manna');
+    const header        = document.querySelector('header');
+    const footer        = document.querySelector('footer');
+    const instructions  = document.getElementById('instructions');
+
+    let x = window.innerWidth  / 2;
+    let y = window.innerHeight / 2;
+    let angle = 0;
+    const speed = 4;
+    const keys = {};
+    let turtleActive = false;
+
+    const COLLECTIBLES = [
+        { symbol: '🌿', type: 'food',     manna: 1 },
+        { symbol: '🍓', type: 'food',     manna: 2 },
+        { symbol: '🌸', type: 'food',     manna: 1 },
+        { symbol: '💎', type: 'treasure', points: 3 },
+        { symbol: '🪲', type: 'treasure', points: 2 },
+    ];
+    const MANNA_MAX = 10;
+    let score = 0, manna = 0;
+    let collected = {};
+    let cx = 0, cy = 0;
+    let currentCollectible = null;
+
+    function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+    function updateScore(delta) {
+        score += delta;
+        scoreEl.textContent = `Score: ${score}`;
+    }
+
+    function updateManna(delta) {
+        manna = clamp(manna + delta, 0, MANNA_MAX);
+        mannaBarEl.style.width = `${(manna / MANNA_MAX) * 100}%`;
+    }
+
+    function collectItem(item) {
+        if (item.type === 'food')     updateManna(item.manna);
+        if (item.type === 'treasure') updateScore(item.points);
+        collected[item.symbol] = (collected[item.symbol] ?? 0) + 1;
+        collectedEl.textContent = 'Collected: ' +
+            Object.entries(collected).map(([s, n]) => `${s}x${n}`).join('  ');
+    }
+
+    function placeCollectible() {
+        currentCollectible = COLLECTIBLES[Math.floor(Math.random() * COLLECTIBLES.length)];
+        collectibleEl.textContent = currentCollectible.symbol;
+        const hBottom = header.getBoundingClientRect().bottom;
+        const fTop    = footer.getBoundingClientRect().top;
+        const m = 40;
+        cx = clamp(Math.random() * window.innerWidth,  m, window.innerWidth  - m);
+        cy = clamp(Math.random() * window.innerHeight, hBottom + m, fTop - m);
+        collectibleEl.style.left = cx + 'px';
+        collectibleEl.style.top  = cy + 'px';
+    }
+
+    function showPopup(text, px, py) {
+        const pop = document.createElement('div');
+        pop.textContent = text;
+        pop.style.cssText = `position:fixed;left:${px}px;top:${py}px;font-size:1.8rem;
+            pointer-events:none;z-index:999;animation:floatUp 0.8s ease forwards;`;
+        document.body.appendChild(pop);
+        setTimeout(() => pop.remove(), 800);
+    }
+
+    function checkCollect() {
+        if (Math.hypot(x - cx, y - cy) < 40) {
+            collectItem(currentCollectible);
+            showPopup(currentCollectible.symbol, cx, cy);
+            placeCollectible();
+        }
+    }
+
+    function activate() {
+        turtleActive = true;
+        turtle.classList.add('active');
+        instructions.innerHTML = `🐢 Turtle active &mdash; use
+            <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> or
+            <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> to move.
+            Press <kbd>Esc</kbd> or click elsewhere to release.`;
+        turtle.setAttribute('aria-label', 'Turtle active. Arrow keys or WASD to move. Escape to release.');
+    }
+
+    function deactivate() {
+        turtleActive = false;
+        turtle.classList.remove('active');
+        instructions.innerHTML = `<strong>How to play:</strong>
+            Click the 🐢 turtle to activate it, then use
+            <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> or
+            <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> to move.
+            Press <kbd>Esc</kbd> to release controls.`;
+        turtle.setAttribute('aria-label', 'Turtle. Click to activate, then use arrow keys to move. Press Escape to release.');
+    }
+
+    // Click to activate
+    turtle.addEventListener('click', activate);
+
+    // Tab + Enter/Space also activates (accessibility)
+    turtle.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            activate();
+            e.preventDefault();
+        }
+    });
+
+    turtle.addEventListener('blur', deactivate);
+
+    document.addEventListener('keydown', e => {
+        if (!turtleActive) return;
+        if (e.key === 'Escape') { deactivate(); return; }
+        keys[e.key] = true;
+        // Remove outline once the user starts moving
+        if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d','W','A','S','D'].includes(e.key)) {
+            turtle.style.outline = 'none';
+            e.preventDefault();
+        }
+    });
+
+    document.addEventListener('keyup', e => { keys[e.key] = false; });
+
+    function update() {
+        if (turtleActive) {
+            if (keys['ArrowRight'] || keys['d'] || keys['D']) { x += speed; angle = 0;   }
+            if (keys['ArrowLeft']  || keys['a'] || keys['A']) { x -= speed; angle = 180; }
+            if (keys['ArrowUp']    || keys['w'] || keys['W']) { y -= speed; angle = -90; }
+            if (keys['ArrowDown']  || keys['s'] || keys['S']) { y += speed; angle = 90;  }
+
+            const hBottom = header.getBoundingClientRect().bottom;
+            const fTop    = footer.getBoundingClientRect().top;
+            x = clamp(x, 30, window.innerWidth  - 30);
+            y = clamp(y, hBottom + 20, fTop - 20);
+
+            checkCollect();
+        }
+
+        turtle.style.transform = `translate(calc(${x}px - 50%), calc(${y}px - 50%)) rotate(${angle}deg)`;
+        requestAnimationFrame(update);
+    }
+
+    placeCollectible();
+    update();
+</script>
+</body>
+</html>
