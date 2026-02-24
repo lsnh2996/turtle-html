@@ -129,7 +129,7 @@
 
         .dpad-btn {
             width: 56px; height: 56px;
-            background: #1a1a1a;
+            background: transparent;
             border: 2px solid #555;
             border-radius: 10px;
             font-size: 1.4rem;
@@ -139,12 +139,12 @@
             cursor: pointer;
             touch-action: none;
             -webkit-tap-highlight-color: transparent;
-            color: white;
+            color: rgb(209, 200, 200)
             margin: 3px;
         }
         .dpad-btn:active,
         .dpad-btn.pressed {
-            background: #2d6e30;
+            background: transparent;
             border-color: #4caf50;
         }
         .dpad-center {
@@ -430,29 +430,6 @@
         'btn-right': 'ArrowRight',
     };
 
-    // ── D-pad side toggle ───────────────────────────────────────
-    const dpadToggle = document.getElementById('dpad-toggle');
-    let dpadSide = window.innerWidth > window.innerHeight ? 'right' : 'left';
-
-    function applyDpadSide() {
-        dpad.classList.remove('left', 'right');
-        dpad.classList.add(dpadSide);
-        dpadToggle.setAttribute('aria-label', `Switch D-pad to ${dpadSide === 'left' ? 'right' : 'left'} side`);
-    }
-
-    dpadToggle.addEventListener('click', () => {
-        dpadSide = dpadSide === 'left' ? 'right' : 'left';
-        applyDpadSide();
-    });
-
-    // When orientation changes, switch to right in landscape, left in portrait
-    // but only if the user hasn't manually toggled (we track this)
-    let userPickedSide = false;
-    const origToggle = dpadToggle.addEventListener.bind(dpadToggle);
-    dpadToggle.addEventListener('click', () => { userPickedSide = true; });
-
-    // Show toggle button alongside dpad (handled in touchstart above)
-
     // Show d-pad on first touch (mobile)
     window.addEventListener('touchstart', () => {
         dpad.style.display = 'block';
@@ -544,9 +521,13 @@
     // ── D-pad side toggle ───────────────────────────────────────
     const dpadToggle = document.getElementById('dpad-toggle');
     // Start on right in landscape, left in portrait
+    let dpadSide = window.innerWidth > window.innerHeight ? 'right' : 'left';
 
-
-
+    function applyDpadSide() {
+        dpad.classList.remove('left', 'right');
+        dpad.classList.add(dpadSide);
+        dpadToggle.setAttribute('aria-label', `Switch D-pad to ${dpadSide === 'left' ? 'right' : 'left'} side`);
+    }
 
     dpadToggle.addEventListener('click', () => {
         dpadSide = dpadSide === 'left' ? 'right' : 'left';
@@ -558,6 +539,8 @@
     let userPickedSide = false;
     const origToggle = dpadToggle.addEventListener.bind(dpadToggle);
     dpadToggle.addEventListener('click', () => { userPickedSide = true; });
+
+    // Show toggle button alongside dpad (handled in touchstart above)
 
     // ── Init ────────────────────────────────────────────────────
     // In landscape on load, show dpad and toggle immediately
