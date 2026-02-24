@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Turtle Game Test</title>
+    <title>Turtle Game</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -11,30 +11,33 @@
             font-family: sans-serif;
             overflow: hidden;
             background: #f5f5f5;
+            height: 100dvh;
         }
 
         header {
             background: #333;
             color: white;
-            padding: 0.75rem 1rem;
+            padding: 0.6rem 1rem;
             position: fixed;
             top: 0; left: 0; right: 0;
             z-index: 200;
             display: flex;
             align-items: center;
-            gap: 1rem;
+            gap: 0.75rem;
         }
 
         #hud {
             display: flex;
-            gap: 1rem;
+            gap: 0.75rem;
             align-items: center;
             margin-left: auto;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
+            flex-wrap: wrap;
+            justify-content: flex-end;
         }
 
         #manna-wrap {
-            width: 100px; height: 10px;
+            width: 80px; height: 10px;
             border: 1px solid #aaa;
             border-radius: 5px;
             overflow: hidden;
@@ -50,39 +53,12 @@
         footer {
             background: #eee;
             border-top: 2px solid #ccc;
-            padding: 0.4rem 1rem;
+            padding: 0.3rem 1rem;
             position: fixed;
             bottom: 0; left: 0; right: 0;
             z-index: 200;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             color: #555;
-        }
-
-                #turtle {
-            position: fixed;
-            top: 0;
-            left: 0;
-            z-index: 100;
-            cursor: pointer;
-            overflow: visible;
-        }
-
-        #turtle:focus {
-            outline: 3px solid #4caf50;
-            outline-offset: 4px;
-        }
-
-        /* No outline once moving — .active class removed on first keypress */
-        #turtle.active {
-            outline: none;
-        }
-
-        #collectible {
-            position: fixed;
-            font-size: 1.8rem;
-            pointer-events: none;
-            z-index: 100;
-            transform: translate(-50%, -50%);
         }
 
         #help-btn {
@@ -90,24 +66,25 @@
             border: 1px solid #aaa;
             color: white;
             border-radius: 4px;
-            padding: 0.2rem 0.6rem;
+            padding: 0.2rem 0.5rem;
             cursor: pointer;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
+            white-space: nowrap;
         }
         #help-btn:hover { background: rgba(255,255,255,0.15); }
 
         #instructions {
             position: fixed;
-            top: 56px;
+            top: 52px;
             left: 50%;
             transform: translateX(-50%);
             background: rgba(255,255,255,0.97);
             border: 1px solid #ccc;
             border-radius: 8px;
-            padding: 0.6rem 1.4rem;
+            padding: 0.6rem 1.2rem;
             text-align: center;
             color: #444;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             line-height: 1.8;
             z-index: 150;
             box-shadow: 0 2px 8px rgba(0,0,0,0.12);
@@ -117,14 +94,71 @@
             background: #eee;
             border: 1px solid #bbb;
             border-radius: 4px;
-            padding: 1px 6px;
-            font-size: 0.85rem;
+            padding: 1px 5px;
+            font-size: 0.8rem;
             font-family: monospace;
+        }
+
+        /* ── Turtle ── */
+        #turtle {
+            position: fixed;
+            top: 0; left: 0;
+            z-index: 100;
+            cursor: pointer;
+            overflow: visible;
+            touch-action: none;
+        }
+        #turtle:focus { outline: 3px solid #4caf50; outline-offset: 4px; }
+        #turtle.active { outline: none; }
+
+        /* ── D-pad (touch only) ── */
+        #dpad {
+            position: fixed;
+            bottom: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 300;
+            display: none; /* shown only on touch */
+            user-select: none;
+        }
+
+        .dpad-row {
+            display: flex;
+            justify-content: center;
+        }
+
+        .dpad-btn {
+            width: 56px; height: 56px;
+            background: rgba(0,0,0,0.18);
+            border: 2px solid rgba(255,255,255,0.4);
+            border-radius: 10px;
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            touch-action: none;
+            -webkit-tap-highlight-color: transparent;
+            color: white;
+            margin: 3px;
+        }
+        .dpad-btn:active,
+        .dpad-btn.pressed {
+            background: rgba(76,175,80,0.5);
+            border-color: #4caf50;
+        }
+        .dpad-center {
+            width: 56px; height: 56px;
+            margin: 3px;
         }
 
         @keyframes floatUp {
             0%   { opacity: 1; transform: translate(-50%, 0); }
             100% { opacity: 0; transform: translate(-50%, -50px); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            @keyframes floatUp { 0%, 100% { opacity: 0; } }
         }
     </style>
 </head>
@@ -132,29 +166,30 @@
 
 <header>
     <span>🐢 Turtle Game</span>
-    <button id="help-btn" aria-expanded="false" aria-controls="instructions">? Help</button>
+    <button id="help-btn" type="button" aria-expanded="false" aria-controls="instructions">? Help</button>
     <div id="hud">
-        <span id="score">Score: 0</span>
-        <span id="collected">Collected: </span>
-        <div id="manna-wrap"><div id="manna"></div></div>
+        <span id="score" aria-live="polite">Score: 0</span>
+        <span id="collected" aria-live="polite">Collected: </span>
+        <div id="manna-wrap" role="progressbar" aria-valuemin="0" aria-valuemax="10" aria-valuenow="0" aria-label="Manna">
+            <div id="manna"></div>
+        </div>
     </div>
 </header>
 
-<div id="instructions" hidden>
+<div id="instructions" role="status" hidden>
     <strong>How to play:</strong>
-    Click the 🐢 turtle to activate it, then use
-    <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> or
-    <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> to move.
-    Press <kbd>Esc</kbd> to release controls.
+    Tap the 🐢 turtle to activate it.<br>
+    Use arrow keys, WASD, or the D-pad to move.<br>
+    Press <kbd>Esc</kbd> or tap elsewhere to stop.
 </div>
 
 <svg id="turtle"
      xmlns="http://www.w3.org/2000/svg"
      viewBox="100 30 480 340"
      width="60" height="40"
-     role="application"
+     role="img"
      tabindex="0"
-     aria-label="Turtle. Click to activate, then use arrow keys to move. Press Escape to release.">
+     aria-label="Turtle. Tap or click to activate, then use arrow keys or D-pad to move.">
     <polygon fill="lightgreen" stroke="darkgreen" stroke-width="15" points="
         536,200 504,168 440,184 392,136 424,88 408,56
         360,104 296,88 232,120 184,72 152,104 200,136
@@ -163,26 +198,57 @@
     "/>
 </svg>
 
+<!-- D-pad for touch -->
+<div id="dpad" aria-label="Directional controls" role="group">
+    <div class="dpad-row">
+        <div class="dpad-center"></div>
+        <button class="dpad-btn" id="btn-up"    type="button" aria-label="Move up">▲</button>
+        <div class="dpad-center"></div>
+    </div>
+    <div class="dpad-row">
+        <button class="dpad-btn" id="btn-left"  type="button" aria-label="Move left">◀</button>
+        <div class="dpad-center"></div>
+        <button class="dpad-btn" id="btn-right" type="button" aria-label="Move right">▶</button>
+    </div>
+    <div class="dpad-row">
+        <div class="dpad-center"></div>
+        <button class="dpad-btn" id="btn-down"  type="button" aria-label="Move down">▼</button>
+        <div class="dpad-center"></div>
+    </div>
+</div>
+
 <footer>C0 public domain</footer>
 
 <script>
-    const turtle        = document.getElementById('turtle');
-    const scoreEl       = document.getElementById('score');
-    const collectedEl   = document.getElementById('collected');
-    const mannaBarEl    = document.getElementById('manna');
-    const header        = document.querySelector('header');
-    const footer        = document.querySelector('footer');
-    const instructions  = document.getElementById('instructions');
-    const helpBtn       = document.getElementById('help-btn');
+    // ── Refs ────────────────────────────────────────────────────
+    const turtle       = document.getElementById('turtle');
+    const scoreEl      = document.getElementById('score');
+    const collectedEl  = document.getElementById('collected');
+    const mannaBarEl   = document.getElementById('manna');
+    const mannaWrap    = document.getElementById('manna-wrap');
+    const headerEl     = document.querySelector('header');
+    const footerEl     = document.querySelector('footer');
+    const instructions = document.getElementById('instructions');
+    const helpBtn      = document.getElementById('help-btn');
+    const dpad         = document.getElementById('dpad');
 
+    // ── Bounds helper ───────────────────────────────────────────
+    function getBounds() {
+        return {
+            hBottom: headerEl.getBoundingClientRect().bottom,
+            fTop:    footerEl.getBoundingClientRect().top,
+            w:       window.innerWidth,
+            h:       window.innerHeight,
+        };
+    }
+
+    // ── Help toggle ─────────────────────────────────────────────
     helpBtn.addEventListener('click', () => {
         const isHidden = instructions.hidden;
         instructions.hidden = !isHidden;
         helpBtn.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
         helpBtn.textContent = isHidden ? '✕ Help' : '? Help';
     });
-
-    // Close instructions if user clicks outside
     document.addEventListener('click', e => {
         if (!instructions.hidden && !instructions.contains(e.target) && e.target !== helpBtn) {
             instructions.hidden = true;
@@ -191,11 +257,13 @@
         }
     });
 
-    let x = window.innerWidth  / 2;
-    let y = window.innerHeight / 2;
+    // ── State ───────────────────────────────────────────────────
+    let { w, h, hBottom, fTop } = getBounds();
+    let x = w / 2;
+    let y = (hBottom + fTop) / 2;
     let angle = 0;
     const speed = 4;
-    const keys = {};
+    const keys  = {};
     let turtleActive = false;
 
     const COLLECTIBLES = [
@@ -206,9 +274,9 @@
         { symbol: '$', type: 'treasure', points: 2 },
     ];
     const MANNA_MAX = 10;
-    let score = 0, manna = 0;
-    let collected = {};
+    let score = 0, manna = 0, collected = {};
 
+    // ── Helpers ─────────────────────────────────────────────────
     function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 
     function updateScore(delta) {
@@ -219,6 +287,7 @@
     function updateManna(delta) {
         manna = clamp(manna + delta, 0, MANNA_MAX);
         mannaBarEl.style.width = `${(manna / MANNA_MAX) * 100}%`;
+        mannaWrap.setAttribute('aria-valuenow', manna);
     }
 
     function collectItem(item) {
@@ -229,17 +298,16 @@
             Object.entries(collected).map(([s, n]) => `${s}x${n}`).join('  ');
     }
 
+    // ── Collectibles ────────────────────────────────────────────
     const NUM_COLLECTIBLES = 3;
-    // Each slot: { el, item, cx, cy }
     const slots = [];
 
     function randomPos() {
-        const hBottom = header.getBoundingClientRect().bottom;
-        const fTop    = footer.getBoundingClientRect().top;
+        const b = getBounds();
         const m = 40;
         return {
-            cx: clamp(Math.random() * window.innerWidth,  m, window.innerWidth  - m),
-            cy: clamp(Math.random() * window.innerHeight, hBottom + m, fTop - m),
+            cx: clamp(Math.random() * b.w, m, b.w - m),
+            cy: clamp(Math.random() * b.h, b.hBottom + m, b.fTop - m),
         };
     }
 
@@ -260,8 +328,7 @@
     function replaceSlot(slot) {
         slot.item = COLLECTIBLES[Math.floor(Math.random() * COLLECTIBLES.length)];
         const { cx, cy } = randomPos();
-        slot.cx = cx;
-        slot.cy = cy;
+        slot.cx = cx; slot.cy = cy;
         slot.el.textContent = slot.item.symbol;
         slot.el.style.left = cx + 'px';
         slot.el.style.top  = cy + 'px';
@@ -282,60 +349,95 @@
                 collectItem(slot.item);
                 showPopup(slot.item.symbol, slot.cx, slot.cy);
                 replaceSlot(slot);
-                break; // only collect one per frame
+                break;
             }
         }
     }
 
+    // ── Activate / deactivate ───────────────────────────────────
     function activate() {
         turtleActive = true;
         turtle.classList.add('active');
-        turtle.setAttribute('aria-label', 'Turtle active. Arrow keys or WASD to move. Escape to release.');
+        turtle.setAttribute('role', 'application');
+        turtle.setAttribute('aria-label', 'Turtle active. Use arrow keys or D-pad to move. Escape to release.');
     }
 
     function deactivate() {
         turtleActive = false;
         turtle.classList.remove('active');
-        turtle.setAttribute('aria-label', 'Turtle. Click to activate, then use arrow keys to move. Press Escape to release.');
+        turtle.setAttribute('role', 'img');
+        turtle.setAttribute('aria-label', 'Turtle. Tap or click to activate, then use arrow keys or D-pad to move.');
     }
 
-    // Click to activate
     turtle.addEventListener('click', activate);
-
-    // Tab + Enter/Space also activates (accessibility)
     turtle.addEventListener('keydown', e => {
-        if (e.key === 'Enter' || e.key === ' ') {
-            activate();
-            e.preventDefault();
-        }
+        if (e.key === 'Enter' || e.key === ' ') { activate(); e.preventDefault(); }
     });
-
     turtle.addEventListener('blur', deactivate);
 
+    // ── Keyboard ────────────────────────────────────────────────
     document.addEventListener('keydown', e => {
         if (!turtleActive) return;
         if (e.key === 'Escape') { deactivate(); return; }
         keys[e.key] = true;
-        // Remove outline once the user starts moving
         if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d','W','A','S','D'].includes(e.key)) {
             turtle.style.outline = 'none';
             e.preventDefault();
         }
     });
-
     document.addEventListener('keyup', e => { keys[e.key] = false; });
 
+    // ── D-pad touch controls ────────────────────────────────────
+    const dpadMap = {
+        'btn-up':    'ArrowUp',
+        'btn-down':  'ArrowDown',
+        'btn-left':  'ArrowLeft',
+        'btn-right': 'ArrowRight',
+    };
+
+    // Show d-pad on first touch
+    window.addEventListener('touchstart', () => {
+        dpad.style.display = 'block';
+        activate(); // touching anywhere auto-activates
+    }, { once: true });
+
+    Object.entries(dpadMap).forEach(([id, key]) => {
+        const btn = document.getElementById(id);
+        const press = e => {
+            e.preventDefault();
+            keys[key] = true;
+            btn.classList.add('pressed');
+            if (!turtleActive) activate();
+        };
+        const release = e => {
+            e.preventDefault();
+            keys[key] = false;
+            btn.classList.remove('pressed');
+        };
+        btn.addEventListener('touchstart', press,   { passive: false });
+        btn.addEventListener('touchend',   release, { passive: false });
+        btn.addEventListener('touchcancel',release, { passive: false });
+        // Also support mouse for testing on desktop
+        btn.addEventListener('mousedown',  press);
+        btn.addEventListener('mouseup',    release);
+        btn.addEventListener('mouseleave', release);
+    });
+
+    // ── Main loop ────────────────────────────────────────────────
     function update() {
         if (turtleActive) {
-            if (keys['ArrowRight'] || keys['d'] || keys['D']) { x += speed; angle = 0;   }
-            if (keys['ArrowLeft']  || keys['a'] || keys['A']) { x -= speed; angle = 180; }
-            if (keys['ArrowUp']    || keys['w'] || keys['W']) { y -= speed; angle = -90; }
-            if (keys['ArrowDown']  || keys['s'] || keys['S']) { y += speed; angle = 90;  }
+            if (keys['ArrowRight']) { x += speed; angle = 0;   }
+            if (keys['ArrowLeft'])  { x -= speed; angle = 180; }
+            if (keys['ArrowUp'])    { y -= speed; angle = -90; }
+            if (keys['ArrowDown'])  { y += speed; angle = 90;  }
+            if (keys['d'] || keys['D']) { x += speed; angle = 0;   }
+            if (keys['a'] || keys['A']) { x -= speed; angle = 180; }
+            if (keys['w'] || keys['W']) { y -= speed; angle = -90; }
+            if (keys['s'] || keys['S']) { y += speed; angle = 90;  }
 
-            const hBottom = header.getBoundingClientRect().bottom;
-            const fTop    = footer.getBoundingClientRect().top;
-            x = clamp(x, 30, window.innerWidth - 30);
-            y = clamp(y, hBottom + 20, fTop - 20);
+            const b = getBounds();
+            x = clamp(x, 30, b.w - 30);
+            y = clamp(y, b.hBottom + 20, b.fTop - 20);
 
             checkCollect();
         }
@@ -344,27 +446,29 @@
         requestAnimationFrame(update);
     }
 
-    initCollectibles();
-    update();
-
-    // ── Resize handling ──────────────────────────────────────────
-    window.addEventListener('resize', () => {
-        const hBottom = header.getBoundingClientRect().bottom;
-        const fTop    = footer.getBoundingClientRect().top;
-
-        // Clamp turtle position to new bounds
-        x = clamp(x, 30, window.innerWidth  - 30);
-        y = clamp(y, hBottom + 20, fTop - 20);
-
-        // Clamp all collectibles to new bounds
+    // ── Resize ──────────────────────────────────────────────────
+    function onResize() {
+        const b = getBounds();
+        x = clamp(x, 30, b.w - 30);
+        y = clamp(y, b.hBottom + 20, b.fTop - 20);
         for (const slot of slots) {
             const m = 40;
-            slot.cx = clamp(slot.cx, m, window.innerWidth  - m);
-            slot.cy = clamp(slot.cy, hBottom + m, fTop - m);
+            slot.cx = clamp(slot.cx, m, b.w - m);
+            slot.cy = clamp(slot.cy, b.hBottom + m, b.fTop - m);
             slot.el.style.left = slot.cx + 'px';
             slot.el.style.top  = slot.cy + 'px';
         }
-    });
+    }
+
+    window.addEventListener('resize', onResize);
+    // visualViewport handles mobile keyboard / orientation changes
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', onResize);
+    }
+
+    // ── Init ────────────────────────────────────────────────────
+    initCollectibles();
+    update();
 </script>
 </body>
 </html>
