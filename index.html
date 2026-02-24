@@ -92,7 +92,7 @@
         }
         #instructions kbd {
             background: #eee;
-            border: 1px solid #bbb;
+            border: 1px solid #767676;
             border-radius: 4px;
             padding: 1px 5px;
             font-size: 0.8rem;
@@ -114,11 +114,11 @@
         /* ── D-pad (touch only) ── */
         #dpad {
             position: fixed;
-            bottom: 60px;
+            bottom: 48px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 300;
-            display: none; /* shown only on touch */
+            display: none;
             user-select: none;
         }
 
@@ -129,8 +129,8 @@
 
         .dpad-btn {
             width: 56px; height: 56px;
-            background: rgba(0,0,0,0.18);
-            border: 2px solid rgba(255,255,255,0.4);
+            background: #1a1a1a;
+            border: 2px solid #555;
             border-radius: 10px;
             font-size: 1.4rem;
             display: flex;
@@ -144,12 +144,45 @@
         }
         .dpad-btn:active,
         .dpad-btn.pressed {
-            background: rgba(76,175,80,0.5);
+            background: #2d6e30;
             border-color: #4caf50;
         }
         .dpad-center {
             width: 56px; height: 56px;
             margin: 3px;
+        }
+
+        /* ── Landscape: smaller header, D-pad on right side ── */
+        @media (orientation: landscape) and (max-height: 500px) {
+            header {
+                padding: 0.3rem 0.75rem;
+                font-size: 0.8rem;
+            }
+            #hud {
+                gap: 0.5rem;
+                font-size: 0.75rem;
+            }
+            #manna-wrap {
+                width: 60px;
+                height: 8px;
+            }
+            footer {
+                padding: 0.15rem 0.75rem;
+                font-size: 0.7rem;
+            }
+            /* Move D-pad to bottom-right in landscape so it doesn't eat play area */
+            #dpad {
+                bottom: 36px;
+                left: auto;
+                right: 16px;
+                transform: none;
+            }
+            /* Smaller D-pad buttons in landscape */
+            .dpad-btn, .dpad-center {
+                width: 44px;
+                height: 44px;
+                font-size: 1.1rem;
+            }
         }
 
         @keyframes floatUp {
@@ -190,7 +223,7 @@
      role="img"
      tabindex="0"
      aria-label="Turtle. Tap or click to activate, then use arrow keys or D-pad to move.">
-    <polygon fill="lightgreen" stroke="darkgreen" stroke-width="15" points="
+    <polygon fill="lightgreen" stroke="#006400" stroke-width="15" points="
         536,200 504,168 440,184 392,136 424,88 408,56
         360,104 296,88 232,120 184,72 152,104 200,136
         168,200 200,264 152,296 184,328 232,280 296,312
@@ -216,6 +249,8 @@
         <div class="dpad-center"></div>
     </div>
 </div>
+
+<button id="dpad-toggle" type="button" aria-label="Switch D-pad side">⇄</button>
 
 <footer>C0 public domain</footer>
 
@@ -398,7 +433,7 @@
     // Show d-pad on first touch
     window.addEventListener('touchstart', () => {
         dpad.style.display = 'block';
-        activate(); // touching anywhere auto-activates
+        activate();
     }, { once: true });
 
     Object.entries(dpadMap).forEach(([id, key]) => {
@@ -460,11 +495,49 @@
         }
     }
 
-    window.addEventListener('resize', onResize);
-    // visualViewport handles mobile keyboard / orientation changes
-    if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', onResize);
+    function onOrientationChange() {
+        const isLandscape = window.innerWidth > window.innerHeight;
+        // Only auto-switch side if user hasn't manually chosen
+        if (!userPickedSide) {
+            dpadSide = isLandscape ? 'right' : 'left';
+            applyDpadSide();
+        }
+        onResize();
     }
+
+    window.addEventListener('resize', onOrientationChange);
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', onOrientationChange);
+    }
+    screen.orientation?.addEventListener('change', onOrientationChange);
+
+    // ── D-pad side toggle ───────────────────────────────────────
+    const dpadToggle = document.getElementById('dpad-toggle');
+    // Start on right in landscape, left in portrait
+    let dpadSide = window.innerWidth > window.innerHeight ? 'right' : 'left';
+
+    function applyDpadSide() {
+        dpad.classList.remove('left', 'right');
+        dpad.classList.add(dpadSide);
+        dpadToggle.setAttribute('aria-label', `Switch D-pad to ${dpadSide === 'left' ? 'right' : 'left'} side`);
+    }
+
+    dpadToggle.addEventListener('click', () => {
+        dpadSide = dpadSide === 'left' ? 'right' : 'left';
+        applyDpadSide();
+    });
+
+    // When orientation changes, switch to right in landscape, left in portrait
+    // but only if the user hasn't manually toggled (we track this)
+    let userPickedSide = false;
+    const origToggle = dpadToggle.addEventListener.bind(dpadToggle);
+    dpadToggle.addEventListener('click', () => { userPickedSide = true; });
+
+    // Show toggle when dpad is shown
+    window.addEventListener('touchstart', () => {
+        dpadToggle.style.display = 'block';
+        applyDpadSide();
+    }, { once: true });
 
     // ── Init ────────────────────────────────────────────────────
     initCollectibles();
