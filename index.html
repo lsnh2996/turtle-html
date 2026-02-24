@@ -430,9 +430,34 @@
         'btn-right': 'ArrowRight',
     };
 
-    // Show d-pad on first touch
+    // ── D-pad side toggle ───────────────────────────────────────
+    const dpadToggle = document.getElementById('dpad-toggle');
+    let dpadSide = window.innerWidth > window.innerHeight ? 'right' : 'left';
+
+    function applyDpadSide() {
+        dpad.classList.remove('left', 'right');
+        dpad.classList.add(dpadSide);
+        dpadToggle.setAttribute('aria-label', `Switch D-pad to ${dpadSide === 'left' ? 'right' : 'left'} side`);
+    }
+
+    dpadToggle.addEventListener('click', () => {
+        dpadSide = dpadSide === 'left' ? 'right' : 'left';
+        applyDpadSide();
+    });
+
+    // When orientation changes, switch to right in landscape, left in portrait
+    // but only if the user hasn't manually toggled (we track this)
+    let userPickedSide = false;
+    const origToggle = dpadToggle.addEventListener.bind(dpadToggle);
+    dpadToggle.addEventListener('click', () => { userPickedSide = true; });
+
+    // Show toggle button alongside dpad (handled in touchstart above)
+
+    // Show d-pad on first touch (mobile)
     window.addEventListener('touchstart', () => {
         dpad.style.display = 'block';
+        dpadToggle.style.display = 'block';
+        applyDpadSide();
         activate();
     }, { once: true });
 
@@ -497,10 +522,15 @@
 
     function onOrientationChange() {
         const isLandscape = window.innerWidth > window.innerHeight;
-        // Only auto-switch side if user hasn't manually chosen
+        // Auto-switch side on orientation change unless user manually chose
         if (!userPickedSide) {
             dpadSide = isLandscape ? 'right' : 'left';
             applyDpadSide();
+        }
+        // Always show dpad + toggle in landscape, hide in portrait unless touch used it
+        if (isLandscape) {
+            dpad.style.display = 'block';
+            dpadToggle.style.display = 'block';
         }
         onResize();
     }
@@ -514,13 +544,9 @@
     // ── D-pad side toggle ───────────────────────────────────────
     const dpadToggle = document.getElementById('dpad-toggle');
     // Start on right in landscape, left in portrait
-    let dpadSide = window.innerWidth > window.innerHeight ? 'right' : 'left';
 
-    function applyDpadSide() {
-        dpad.classList.remove('left', 'right');
-        dpad.classList.add(dpadSide);
-        dpadToggle.setAttribute('aria-label', `Switch D-pad to ${dpadSide === 'left' ? 'right' : 'left'} side`);
-    }
+
+
 
     dpadToggle.addEventListener('click', () => {
         dpadSide = dpadSide === 'left' ? 'right' : 'left';
@@ -533,13 +559,14 @@
     const origToggle = dpadToggle.addEventListener.bind(dpadToggle);
     dpadToggle.addEventListener('click', () => { userPickedSide = true; });
 
-    // Show toggle when dpad is shown
-    window.addEventListener('touchstart', () => {
+    // ── Init ────────────────────────────────────────────────────
+    // In landscape on load, show dpad and toggle immediately
+    if (window.innerWidth > window.innerHeight) {
+        dpad.style.display = 'block';
         dpadToggle.style.display = 'block';
         applyDpadSide();
-    }, { once: true });
+    }
 
-    // ── Init ────────────────────────────────────────────────────
     initCollectibles();
     update();
 </script>
