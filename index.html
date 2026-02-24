@@ -53,11 +53,11 @@
         footer {
             background: #eee;
             border-top: 1px solid #ccc;
-            padding: 0.1rem 0.1rem;
+            padding: 0.1rem 0.75rem;
             position: fixed;
             bottom: 0; left: 0; right: 0;
             z-index: 200;
-            font-size: 0.5rem;
+            font-size: 0.7rem;
             color: #555;
         }
 
@@ -128,7 +128,7 @@
 
         .dpad-btn {
             width: 56px; height: 56px;
-            background: transparent;
+            background: #1a1a1a;
             border: 2px solid #555;
             border-radius: 10px;
             font-size: 1.4rem;
@@ -138,7 +138,7 @@
             cursor: pointer;
             touch-action: none;
             -webkit-tap-highlight-color: transparent;
-            color: black;
+            color: white;
             margin: 3px;
         }
         .dpad-btn:active,
@@ -461,11 +461,14 @@
         btn.addEventListener('mouseleave',  release);
     });
 
-    // ── Show controls on first touch ──────────────────────────────
-    window.addEventListener('touchstart', () => {
-        showControls();
-        activate();
-    }, { once: true });
+    // ── Show controls on first touch (mobile only) ───────────────
+    const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
+    if (isTouchDevice) {
+        window.addEventListener('touchstart', () => {
+            showControls();
+            activate();
+        }, { once: true });
+    }
 
     // ── Main loop ─────────────────────────────────────────────────
     function update() {
@@ -500,8 +503,8 @@
         if (!userPickedSide) {
             applyDpadSide(b.w > b.h ? 'right' : 'left');
         }
-        // Show dpad in landscape even if not touched yet
-        if (b.w > b.h) showControls();
+        // Show dpad in landscape on touch devices
+        if (isTouchDevice && b.w > b.h) showControls();
     }
 
     window.addEventListener('resize', onResize);
@@ -512,8 +515,8 @@
 
     // ── Init ──────────────────────────────────────────────────────
     initCollectibles();
-    // Show dpad immediately if already in landscape
-    if (window.innerWidth > window.innerHeight) showControls();
+    // Show dpad immediately if already in landscape on touch device
+    if (isTouchDevice && window.innerWidth > window.innerHeight) showControls();
     update();
 </script>
 </body>
