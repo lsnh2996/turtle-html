@@ -53,11 +53,11 @@
         footer {
             background: #eee;
             border-top: 1px solid #ccc;
-            padding: 0.1rem 0.1rem;
+            padding: 0.1rem 0.75rem;
             position: fixed;
             bottom: 0; left: 0; right: 0;
             z-index: 200;
-            font-size: 0.5rem;
+            font-size: 0.7rem;
             color: #555;
         }
 
@@ -99,7 +99,6 @@
             font-family: monospace;
         }
 
-        /* ── Turtle ── */
         #turtle {
             position: fixed;
             top: 0; left: 0;
@@ -111,16 +110,16 @@
         #turtle:focus { outline: 3px solid #4caf50; outline-offset: 4px; }
         #turtle.active { outline: none; }
 
-        /* ── D-pad (touch only) ── */
+        /* D-pad */
         #dpad {
             position: fixed;
             bottom: 48px;
-            left: 50%;
-            transform: translateX(-50%);
             z-index: 300;
-            display: none;
             user-select: none;
+            display: none;
         }
+        #dpad.left  { left: 16px; }
+        #dpad.right { right: 16px; }
 
         .dpad-row {
             display: flex;
@@ -129,8 +128,8 @@
 
         .dpad-btn {
             width: 56px; height: 56px;
-            background: transparent;
-            border: 2px solid #000000;
+            background: #1a1a1a;
+            border: 2px solid #555;
             border-radius: 10px;
             font-size: 1.4rem;
             display: flex;
@@ -139,57 +138,43 @@
             cursor: pointer;
             touch-action: none;
             -webkit-tap-highlight-color: transparent;
-            color: rgb(255, 255, 255)
+            color: white;
             margin: 3px;
         }
         .dpad-btn:active,
         .dpad-btn.pressed {
-            background: transparent;
+            background: #2d6e30;
             border-color: #4caf50;
         }
-        .dpad-center {
+        .dpad-gap {
             width: 56px; height: 56px;
             margin: 3px;
         }
 
-        /* ── Landscape: smaller header, D-pad on right side ── */
-        @media (orientation: landscape) and (max-height: 500px) {
-            header {
-                padding: 0.3rem 0.75rem;
-                font-size: 0.8rem;
-            }
-            #hud {
-                gap: 0.5rem;
-                font-size: 0.75rem;
-            }
-            #manna-wrap {
-                width: 60px;
-                height: 8px;
-            }
-            footer {
-                padding: 0.15rem 0.5rem;
-                font-size: 0.7rem;
-            }
-            /* Move D-pad to bottom-right in landscape so it doesn't eat play area */
-            #dpad {
-                bottom: 36px;
-                left: auto;
-                right: 16px;
-                transform: none;
-            }
-            /* Smaller D-pad buttons in landscape */
-            .dpad-btn, .dpad-center {
-                width: 44px;
-                height: 44px;
-                font-size: 1.1rem;
-            }
+        /* Toggle button always on opposite side from dpad */
+        #dpad-toggle {
+            position: fixed;
+            bottom: 80px;
+            z-index: 300;
+            display: none;
+            background: #1a1a1a;
+            border: 2px solid #555;
+            border-radius: 10px;
+            color: white;
+            font-size: 1rem;
+            padding: 0.4rem 0.7rem;
+            cursor: pointer;
+            touch-action: none;
+            -webkit-tap-highlight-color: transparent;
         }
+        #dpad-toggle:active { background: #2d6e30; border-color: #4caf50; }
+        #dpad.left  + #dpad-toggle { left: auto; right: 16px; }
+        #dpad.right + #dpad-toggle { left: 16px; right: auto; }
 
         @keyframes floatUp {
             0%   { opacity: 1; transform: translate(-50%, 0); }
             100% { opacity: 0; transform: translate(-50%, -50px); }
         }
-
         @media (prefers-reduced-motion: reduce) {
             @keyframes floatUp { 0%, 100% { opacity: 0; } }
         }
@@ -231,58 +216,48 @@
     "/>
 </svg>
 
-<!-- D-pad for touch -->
 <div id="dpad" aria-label="Directional controls" role="group">
     <div class="dpad-row">
-        <div class="dpad-center"></div>
+        <div class="dpad-gap"></div>
         <button class="dpad-btn" id="btn-up"    type="button" aria-label="Move up">▲</button>
-        <div class="dpad-center"></div>
+        <div class="dpad-gap"></div>
     </div>
     <div class="dpad-row">
         <button class="dpad-btn" id="btn-left"  type="button" aria-label="Move left">◀</button>
-        <div class="dpad-center"></div>
+        <div class="dpad-gap"></div>
         <button class="dpad-btn" id="btn-right" type="button" aria-label="Move right">▶</button>
     </div>
     <div class="dpad-row">
-        <div class="dpad-center"></div>
+        <div class="dpad-gap"></div>
         <button class="dpad-btn" id="btn-down"  type="button" aria-label="Move down">▼</button>
-        <div class="dpad-center"></div>
+        <div class="dpad-gap"></div>
     </div>
 </div>
 
-<button id="dpad-toggle" type="button" aria-label="Switch D-pad side">⇄</button>
+<button id="dpad-toggle" type="button">⇄</button>
 
 <footer>C0 public domain</footer>
 
 <script>
-    // ── Refs ────────────────────────────────────────────────────
-    const turtle       = document.getElementById('turtle');
-    const scoreEl      = document.getElementById('score');
-    const collectedEl  = document.getElementById('collected');
-    const mannaBarEl   = document.getElementById('manna');
-    const mannaWrap    = document.getElementById('manna-wrap');
-    const headerEl     = document.querySelector('header');
-    const footerEl     = document.querySelector('footer');
-    const instructions = document.getElementById('instructions');
-    const helpBtn      = document.getElementById('help-btn');
-    const dpad         = document.getElementById('dpad');
+    // ── Refs ─────────────────────────────────────────────────────
+    const turtle      = document.getElementById('turtle');
+    const scoreEl     = document.getElementById('score');
+    const collectedEl = document.getElementById('collected');
+    const mannaEl     = document.getElementById('manna');
+    const mannaWrap   = document.getElementById('manna-wrap');
+    const headerEl    = document.querySelector('header');
+    const footerEl    = document.querySelector('footer');
+    const instructions= document.getElementById('instructions');
+    const helpBtn     = document.getElementById('help-btn');
+    const dpad        = document.getElementById('dpad');
+    const dpadToggle  = document.getElementById('dpad-toggle');
 
-    // ── Bounds helper ───────────────────────────────────────────
-    function getBounds() {
-        return {
-            hBottom: headerEl.getBoundingClientRect().bottom,
-            fTop:    footerEl.getBoundingClientRect().top,
-            w:       window.innerWidth,
-            h:       window.innerHeight,
-        };
-    }
-
-    // ── Help toggle ─────────────────────────────────────────────
+    // ── Help toggle ───────────────────────────────────────────────
     helpBtn.addEventListener('click', () => {
-        const isHidden = instructions.hidden;
-        instructions.hidden = !isHidden;
-        helpBtn.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
-        helpBtn.textContent = isHidden ? '✕ Help' : '? Help';
+        const hidden = instructions.hidden;
+        instructions.hidden = !hidden;
+        helpBtn.setAttribute('aria-expanded', hidden ? 'true' : 'false');
+        helpBtn.textContent = hidden ? '✕ Help' : '? Help';
     });
     document.addEventListener('click', e => {
         if (!instructions.hidden && !instructions.contains(e.target) && e.target !== helpBtn) {
@@ -292,26 +267,60 @@
         }
     });
 
-    // ── State ───────────────────────────────────────────────────
-    let { w, h, hBottom, fTop } = getBounds();
-    let x = w / 2;
-    let y = (hBottom + fTop) / 2;
-    let angle = 0;
-    const speed = 4;
-    const keys  = {};
-    let turtleActive = false;
+    // ── D-pad side ────────────────────────────────────────────────
+    let dpadSide = 'right'; // default, updated on show
+    let userPickedSide = false;
 
+    function applyDpadSide(side) {
+        dpadSide = side;
+        dpad.classList.remove('left', 'right');
+        dpad.classList.add(side);
+        dpadToggle.setAttribute('aria-label',
+            `Switch D-pad to ${side === 'left' ? 'right' : 'left'} side`);
+    }
+
+    function showControls() {
+        const landscape = window.innerWidth > window.innerHeight;
+        dpad.style.display = 'block';
+        dpadToggle.style.display = 'block';
+        if (!userPickedSide) {
+            applyDpadSide(landscape ? 'right' : 'left');
+        }
+    }
+
+    dpadToggle.addEventListener('click', () => {
+        userPickedSide = true;
+        applyDpadSide(dpadSide === 'left' ? 'right' : 'left');
+    });
+
+    // ── Game state ────────────────────────────────────────────────
     const COLLECTIBLES = [
         { symbol: '🌿', type: 'food',     manna: 1 },
         { symbol: '🍓', type: 'food',     manna: 2 },
-        { symbol: '@', type: 'food',     manna: 1 },
+        { symbol: '🌸', type: 'food',     manna: 1 },
         { symbol: '💎', type: 'treasure', points: 3 },
-        { symbol: '$', type: 'treasure', points: 2 },
+        { symbol: '🪲', type: 'treasure', points: 2 },
     ];
     const MANNA_MAX = 10;
     let score = 0, manna = 0, collected = {};
 
-    // ── Helpers ─────────────────────────────────────────────────
+    function getBounds() {
+        return {
+            hBottom: headerEl.getBoundingClientRect().bottom,
+            fTop:    footerEl.getBoundingClientRect().top,
+            w: window.innerWidth,
+            h: window.innerHeight,
+        };
+    }
+
+    let b = getBounds();
+    let x = b.w / 2;
+    let y = (b.hBottom + b.fTop) / 2;
+    let angle = 0;
+    const speed = 4;
+    const keys = {};
+    let turtleActive = false;
+
     function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 
     function updateScore(delta) {
@@ -321,7 +330,7 @@
 
     function updateManna(delta) {
         manna = clamp(manna + delta, 0, MANNA_MAX);
-        mannaBarEl.style.width = `${(manna / MANNA_MAX) * 100}%`;
+        mannaEl.style.width = `${(manna / MANNA_MAX) * 100}%`;
         mannaWrap.setAttribute('aria-valuenow', manna);
     }
 
@@ -333,7 +342,7 @@
             Object.entries(collected).map(([s, n]) => `${s}x${n}`).join('  ');
     }
 
-    // ── Collectibles ────────────────────────────────────────────
+    // ── Collectibles ──────────────────────────────────────────────
     const NUM_COLLECTIBLES = 3;
     const slots = [];
 
@@ -389,7 +398,7 @@
         }
     }
 
-    // ── Activate / deactivate ───────────────────────────────────
+    // ── Activate / deactivate ─────────────────────────────────────
     function activate() {
         turtleActive = true;
         turtle.classList.add('active');
@@ -410,33 +419,26 @@
     });
     turtle.addEventListener('blur', deactivate);
 
-    // ── Keyboard ────────────────────────────────────────────────
+    // ── Keyboard ──────────────────────────────────────────────────
     document.addEventListener('keydown', e => {
         if (!turtleActive) return;
         if (e.key === 'Escape') { deactivate(); return; }
         keys[e.key] = true;
-        if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d','W','A','S','D'].includes(e.key)) {
+        if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',
+             'w','a','s','d','W','A','S','D'].includes(e.key)) {
             turtle.style.outline = 'none';
             e.preventDefault();
         }
     });
     document.addEventListener('keyup', e => { keys[e.key] = false; });
 
-    // ── D-pad touch controls ────────────────────────────────────
+    // ── D-pad buttons ─────────────────────────────────────────────
     const dpadMap = {
         'btn-up':    'ArrowUp',
         'btn-down':  'ArrowDown',
         'btn-left':  'ArrowLeft',
         'btn-right': 'ArrowRight',
     };
-
-    // Show d-pad on first touch (mobile)
-    window.addEventListener('touchstart', () => {
-        dpad.style.display = 'block';
-        dpadToggle.style.display = 'block';
-        applyDpadSide();
-        activate();
-    }, { once: true });
 
     Object.entries(dpadMap).forEach(([id, key]) => {
         const btn = document.getElementById(id);
@@ -451,39 +453,38 @@
             keys[key] = false;
             btn.classList.remove('pressed');
         };
-        btn.addEventListener('touchstart', press,   { passive: false });
-        btn.addEventListener('touchend',   release, { passive: false });
-        btn.addEventListener('touchcancel',release, { passive: false });
-        // Also support mouse for testing on desktop
-        btn.addEventListener('mousedown',  press);
-        btn.addEventListener('mouseup',    release);
-        btn.addEventListener('mouseleave', release);
+        btn.addEventListener('touchstart',  press,   { passive: false });
+        btn.addEventListener('touchend',    release, { passive: false });
+        btn.addEventListener('touchcancel', release, { passive: false });
+        btn.addEventListener('mousedown',   press);
+        btn.addEventListener('mouseup',     release);
+        btn.addEventListener('mouseleave',  release);
     });
 
-    // ── Main loop ────────────────────────────────────────────────
+    // ── Show controls on first touch ──────────────────────────────
+    window.addEventListener('touchstart', () => {
+        showControls();
+        activate();
+    }, { once: true });
+
+    // ── Main loop ─────────────────────────────────────────────────
     function update() {
         if (turtleActive) {
-            if (keys['ArrowRight']) { x += speed; angle = 0;   }
-            if (keys['ArrowLeft'])  { x -= speed; angle = 180; }
-            if (keys['ArrowUp'])    { y -= speed; angle = -90; }
-            if (keys['ArrowDown'])  { y += speed; angle = 90;  }
-            if (keys['d'] || keys['D']) { x += speed; angle = 0;   }
-            if (keys['a'] || keys['A']) { x -= speed; angle = 180; }
-            if (keys['w'] || keys['W']) { y -= speed; angle = -90; }
-            if (keys['s'] || keys['S']) { y += speed; angle = 90;  }
+            if (keys['ArrowRight'] || keys['d'] || keys['D']) { x += speed; angle = 0;   }
+            if (keys['ArrowLeft']  || keys['a'] || keys['A']) { x -= speed; angle = 180; }
+            if (keys['ArrowUp']    || keys['w'] || keys['W']) { y -= speed; angle = -90; }
+            if (keys['ArrowDown']  || keys['s'] || keys['S']) { y += speed; angle = 90;  }
 
             const b = getBounds();
             x = clamp(x, 30, b.w - 30);
             y = clamp(y, b.hBottom + 20, b.fTop - 20);
-
             checkCollect();
         }
-
         turtle.style.transform = `translate(calc(${x}px - 50%), calc(${y}px - 50%)) rotate(${angle}deg)`;
         requestAnimationFrame(update);
     }
 
-    // ── Resize ──────────────────────────────────────────────────
+    // ── Resize ────────────────────────────────────────────────────
     function onResize() {
         const b = getBounds();
         x = clamp(x, 30, b.w - 30);
@@ -495,62 +496,24 @@
             slot.el.style.left = slot.cx + 'px';
             slot.el.style.top  = slot.cy + 'px';
         }
-    }
-
-    function onOrientationChange() {
-        const isLandscape = window.innerWidth > window.innerHeight;
-        // Auto-switch side on orientation change unless user manually chose
+        // Auto-switch dpad side on orientation change
         if (!userPickedSide) {
-            dpadSide = isLandscape ? 'right' : 'left';
-            applyDpadSide();
+            applyDpadSide(b.w > b.h ? 'right' : 'left');
         }
-        // Always show dpad + toggle in landscape, hide in portrait unless touch used it
-        if (isLandscape) {
-            dpad.style.display = 'block';
-            dpadToggle.style.display = 'block';
-        }
-        onResize();
+        // Show dpad in landscape even if not touched yet
+        if (b.w > b.h) showControls();
     }
 
-    window.addEventListener('resize', onOrientationChange);
+    window.addEventListener('resize', onResize);
     if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', onOrientationChange);
+        window.visualViewport.addEventListener('resize', onResize);
     }
-    screen.orientation?.addEventListener('change', onOrientationChange);
+    screen.orientation?.addEventListener('change', onResize);
 
-    // ── D-pad side toggle ───────────────────────────────────────
-    const dpadToggle = document.getElementById('dpad-toggle');
-    // Start on right in landscape, left in portrait
-    let dpadSide = window.innerWidth > window.innerHeight ? 'right' : 'left';
-
-    function applyDpadSide() {
-        dpad.classList.remove('left', 'right');
-        dpad.classList.add(dpadSide);
-        dpadToggle.setAttribute('aria-label', `Switch D-pad to ${dpadSide === 'left' ? 'right' : 'left'} side`);
-    }
-
-    dpadToggle.addEventListener('click', () => {
-        dpadSide = dpadSide === 'left' ? 'right' : 'left';
-        applyDpadSide();
-    });
-
-    // When orientation changes, switch to right in landscape, left in portrait
-    // but only if the user hasn't manually toggled (we track this)
-    let userPickedSide = false;
-    const origToggle = dpadToggle.addEventListener.bind(dpadToggle);
-    dpadToggle.addEventListener('click', () => { userPickedSide = true; });
-
-    // Show toggle button alongside dpad (handled in touchstart above)
-
-    // ── Init ────────────────────────────────────────────────────
-    // In landscape on load, show dpad and toggle immediately
-    if (window.innerWidth > window.innerHeight) {
-        dpad.style.display = 'block';
-        dpadToggle.style.display = 'block';
-        applyDpadSide();
-    }
-
+    // ── Init ──────────────────────────────────────────────────────
     initCollectibles();
+    // Show dpad immediately if already in landscape
+    if (window.innerWidth > window.innerHeight) showControls();
     update();
 </script>
 </body>
