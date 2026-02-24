@@ -58,39 +58,7 @@
             color: #555;
         }
 
-        /* Instructions panel pinned below header, never overlaps turtle */
-        #instructions {
-            position: fixed;
-            top: 56px; /* sits just below header */
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(255, 255, 255, 0.95);
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            padding: 0.6rem 1.4rem;
-            text-align: center;
-            color: #444;
-            font-size: 0.9rem;
-            line-height: 1.8;
-            z-index: 150;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.12);
-            white-space: nowrap;
-        }
-
-        #instructions kbd {
-            background: #eee;
-            border: 1px solid #bbb;
-            border-radius: 4px;
-            padding: 1px 6px;
-            font-size: 0.85rem;
-            font-family: monospace;
-        }
-
-        #instructions.hidden {
-            display: none;
-        }
-
-        #turtle {
+                #turtle {
             position: fixed;
             top: 0;
             left: 0;
@@ -117,6 +85,43 @@
             transform: translate(-50%, -50%);
         }
 
+        #help-btn {
+            background: transparent;
+            border: 1px solid #aaa;
+            color: white;
+            border-radius: 4px;
+            padding: 0.2rem 0.6rem;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+        #help-btn:hover { background: rgba(255,255,255,0.15); }
+
+        #instructions {
+            position: fixed;
+            top: 56px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255,255,255,0.97);
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 0.6rem 1.4rem;
+            text-align: center;
+            color: #444;
+            font-size: 0.9rem;
+            line-height: 1.8;
+            z-index: 150;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+            white-space: nowrap;
+        }
+        #instructions kbd {
+            background: #eee;
+            border: 1px solid #bbb;
+            border-radius: 4px;
+            padding: 1px 6px;
+            font-size: 0.85rem;
+            font-family: monospace;
+        }
+
         @keyframes floatUp {
             0%   { opacity: 1; transform: translate(-50%, 0); }
             100% { opacity: 0; transform: translate(-50%, -50px); }
@@ -127,6 +132,7 @@
 
 <header>
     <span>🐢 Turtle Game</span>
+    <button id="help-btn" aria-expanded="false" aria-controls="instructions">? Help</button>
     <div id="hud">
         <span id="score">Score: 0</span>
         <span id="collected">Collected: </span>
@@ -134,7 +140,7 @@
     </div>
 </header>
 
-<div id="instructions">
+<div id="instructions" hidden>
     <strong>How to play:</strong>
     Click the 🐢 turtle to activate it, then use
     <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> or
@@ -167,6 +173,23 @@
     const header        = document.querySelector('header');
     const footer        = document.querySelector('footer');
     const instructions  = document.getElementById('instructions');
+    const helpBtn       = document.getElementById('help-btn');
+
+    helpBtn.addEventListener('click', () => {
+        const isHidden = instructions.hidden;
+        instructions.hidden = !isHidden;
+        helpBtn.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+        helpBtn.textContent = isHidden ? '✕ Help' : '? Help';
+    });
+
+    // Close instructions if user clicks outside
+    document.addEventListener('click', e => {
+        if (!instructions.hidden && !instructions.contains(e.target) && e.target !== helpBtn) {
+            instructions.hidden = true;
+            helpBtn.setAttribute('aria-expanded', 'false');
+            helpBtn.textContent = '? Help';
+        }
+    });
 
     let x = window.innerWidth  / 2;
     let y = window.innerHeight / 2;
@@ -178,6 +201,7 @@
     const COLLECTIBLES = [
         { symbol: '🌿', type: 'food',     manna: 1 },
         { symbol: '🍓', type: 'food',     manna: 2 },
+        { symbol: '@', type: 'food',     manna: 1 },
         { symbol: '💎', type: 'treasure', points: 3 },
         { symbol: '$', type: 'treasure', points: 2 },
     ];
@@ -266,21 +290,12 @@
     function activate() {
         turtleActive = true;
         turtle.classList.add('active');
-        instructions.innerHTML = `🐢 Turtle active &mdash; use
-            <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> or
-            <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> to move.
-            Press <kbd>Esc</kbd> or click elsewhere to release.`;
         turtle.setAttribute('aria-label', 'Turtle active. Arrow keys or WASD to move. Escape to release.');
     }
 
     function deactivate() {
         turtleActive = false;
         turtle.classList.remove('active');
-        instructions.innerHTML = `<strong>How to play:</strong>
-            Click the 🐢 turtle to activate it, then use
-            <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> or
-            <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> to move.
-            Press <kbd>Esc</kbd> to release controls.`;
         turtle.setAttribute('aria-label', 'Turtle. Click to activate, then use arrow keys to move. Press Escape to release.');
     }
 
@@ -319,7 +334,7 @@
 
             const hBottom = header.getBoundingClientRect().bottom;
             const fTop    = footer.getBoundingClientRect().top;
-            x = clamp(x, 30, window.innerWidth  - 30);
+            x = clamp(x, 30, window.innerWidth - 30);
             y = clamp(y, hBottom + 20, fTop - 20);
 
             checkCollect();
