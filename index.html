@@ -346,6 +346,25 @@
 
     initCollectibles();
     update();
+
+    // ── Resize handling ──────────────────────────────────────────
+    window.addEventListener('resize', () => {
+        const hBottom = header.getBoundingClientRect().bottom;
+        const fTop    = footer.getBoundingClientRect().top;
+
+        // Clamp turtle position to new bounds
+        x = clamp(x, 30, window.innerWidth  - 30);
+        y = clamp(y, hBottom + 20, fTop - 20);
+
+        // Clamp all collectibles to new bounds
+        for (const slot of slots) {
+            const m = 40;
+            slot.cx = clamp(slot.cx, m, window.innerWidth  - m);
+            slot.cy = clamp(slot.cy, hBottom + m, fTop - m);
+            slot.el.style.left = slot.cx + 'px';
+            slot.el.style.top  = slot.cy + 'px';
+        }
+    });
 </script>
 </body>
 </html>
