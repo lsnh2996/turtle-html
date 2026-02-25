@@ -17,21 +17,50 @@
         header {
             background: #333;
             color: white;
-            padding: 0.6rem 1rem;
+            padding: 0.4rem 0.75rem;
             position: fixed;
             top: 0; left: 0; right: 0;
             z-index: 200;
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            min-height: 44px;
         }
+
+        header > .title { white-space: nowrap; font-size: 0.9rem; }
+
+        /* ── Control mode toggle ── */
+        #ctrl-toggle {
+            display: flex;
+            background: #222;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid #555;
+            flex-shrink: 0;
+        }
+        .ctrl-btn {
+            background: transparent;
+            border: none;
+            color: #aaa;
+            padding: 0.25rem 0.5rem;
+            cursor: pointer;
+            font-size: 0.72rem;
+            white-space: nowrap;
+            border-right: 1px solid #555;
+            transition: background 0.15s, color 0.15s;
+            line-height: 1.5;
+        }
+        .ctrl-btn:last-child { border-right: none; }
+        .ctrl-btn:hover  { background: #3a3a3a; color: #fff; }
+        .ctrl-btn.active { background: #2d6e30; color: #fff; }
 
         #hud {
             display: flex;
-            gap: 0.75rem;
+            gap: 0.6rem;
             align-items: center;
             margin-left: auto;
-            font-size: 0.85rem;
+            font-size: 0.82rem;
             flex-wrap: wrap;
             justify-content: flex-end;
         }
@@ -43,7 +72,6 @@
             overflow: hidden;
             background: #555;
         }
-
         #manna {
             height: 100%; width: 0%;
             background: linear-gradient(90deg, #4caf50, #8bc34a);
@@ -75,7 +103,7 @@
 
         #instructions {
             position: fixed;
-            top: 52px;
+            top: 56px;
             left: 50%;
             transform: translateX(-50%);
             background: rgba(255,255,255,0.97);
@@ -110,49 +138,48 @@
         #turtle:focus { outline: 3px solid #4caf50; outline-offset: 4px; }
         #turtle.active { outline: none; }
 
-        /* D-pad */
-        #dpad {
+        /* ════════════════════════════════
+           JOYSTICK
+        ════════════════════════════════ */
+        #joystick-wrap {
             position: fixed;
-            bottom: 48px;
             z-index: 300;
             user-select: none;
             display: none;
+            touch-action: none;
         }
-        #dpad.left  { left: 16px; }
-        #dpad.right { right: 16px; }
-
-        .dpad-row {
-            display: flex;
-            justify-content: center;
-        }
-
-        .dpad-btn {
-            width: 56px; height: 56px;
-            background: transparent;
-            border: 2px solid #555;
-            border-radius: 10px;
-            font-size: 1.4rem;
+        #joystick-base {
+            width: 120px; height: 120px;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.25);
+            border: 2px solid rgba(0,0,0,0.35);
+            position: relative;
             display: flex;
             align-items: center;
             justify-content: center;
-            cursor: pointer;
             touch-action: none;
-            -webkit-tap-highlight-color: transparent;
-            color: black;
-            margin: 3px;
         }
-        .dpad-btn:active,
-        .dpad-btn.pressed {
-            background: #2d6e30;
-            border-color: #4caf50;
+        #joystick-base::before {
+            content: '';
+            position: absolute;
+            inset: 10px;
+            border-radius: 50%;
+            border: 1px dashed rgba(255,255,255,0.2);
+            pointer-events: none;
         }
-        .dpad-gap {
-            width: 56px; height: 56px;
-            margin: 3px;
+        #joystick-stick {
+            width: 48px; height: 48px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 38% 32%, #6ed670, #2d6e30);
+            border: 2px solid #4caf50;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
         }
 
-        /* Toggle button always on opposite side from dpad */
-        #dpad-toggle {
+        .side-toggle-btn {
             position: fixed;
             bottom: 80px;
             z-index: 300;
@@ -167,9 +194,45 @@
             touch-action: none;
             -webkit-tap-highlight-color: transparent;
         }
-        #dpad-toggle:active { background: #2d6e30; border-color: #4caf50; }
-        #dpad.left  + #dpad-toggle { left: auto; right: 16px; }
-        #dpad.right + #dpad-toggle { left: 16px; right: auto; }
+        .side-toggle-btn:active { background: #2d6e30; border-color: #4caf50; }
+
+        /* ════════════════════════════════
+           D-PAD
+        ════════════════════════════════ */
+        #dpad {
+            position: fixed;
+            bottom: 48px;
+            z-index: 300;
+            user-select: none;
+            display: none;
+        }
+        #dpad.left  { left: 16px; }
+        #dpad.right { right: 16px; }
+
+        .dpad-row { display: flex; justify-content: center; }
+
+        .dpad-btn {
+            width: 56px; height: 56px;
+            background: transparent;
+            border: 2px solid #555;
+            border-radius: 10px;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            touch-action: none;
+            -webkit-tap-highlight-color: transparent;
+            color: black;
+            margin: 3px;
+        }
+        .dpad-btn:active, .dpad-btn.pressed {
+            background: #2d6e30;
+            border-color: #4caf50;
+        }
+        .dpad-gap { width: 56px; height: 56px; margin: 3px; }
+
+        .touch-hidden { display: none !important; }
 
         @keyframes floatUp {
             0%   { opacity: 1; transform: translate(-50%, 0); }
@@ -183,10 +246,20 @@
 <body>
 
 <header>
-    <span>🐢 Turtle Game</span>
+    <span class="title">🐢 Turtle Game</span>
+
+    <div id="ctrl-toggle" role="group" aria-label="Control mode">
+        <button class="ctrl-btn active" data-mode="keyboard"   type="button">⌨️ Keys</button>
+        <button class="ctrl-btn"        data-mode="fixed-joy"  type="button">🕹️ Fixed</button>
+        <button class="ctrl-btn"        data-mode="float-joy"  type="button">🕹️ Float</button>
+        <button class="ctrl-btn"        data-mode="dpad4"      type="button">✛ D-pad</button>
+
+    </div>
+
     <button id="help-btn" type="button" aria-expanded="false" aria-controls="instructions">? Help</button>
+
     <div id="hud">
-        <span id="score" aria-live="polite">Score: 0</span>
+        <span id="score"     aria-live="polite">Score: 0</span>
         <span id="collected" aria-live="polite">Collected: </span>
         <div id="manna-wrap" role="progressbar" aria-valuemin="0" aria-valuemax="10" aria-valuenow="0" aria-label="Manna">
             <div id="manna"></div>
@@ -197,17 +270,15 @@
 <div id="instructions" role="status" hidden>
     <strong>How to play:</strong>
     Tap the 🐢 turtle to activate it.<br>
-    Use arrow keys, WASD, or the D-pad to move.<br>
-    Press <kbd>Esc</kbd> or tap elsewhere to stop.
+    Use the selected control to move · <kbd>Esc</kbd> to stop.
 </div>
 
 <svg id="turtle"
      xmlns="http://www.w3.org/2000/svg"
      viewBox="100 30 480 340"
      width="60" height="40"
-     role="img"
-     tabindex="0"
-     aria-label="Turtle. Tap or click to activate, then use arrow keys or D-pad to move.">
+     role="img" tabindex="0"
+     aria-label="Turtle. Tap or click to activate.">
     <polygon fill="lightgreen" stroke="#006400" stroke-width="15" points="
         536,200 504,168 440,184 392,136 424,88 408,56
         360,104 296,88 232,120 184,72 152,104 200,136
@@ -216,47 +287,61 @@
     "/>
 </svg>
 
-<div id="dpad" aria-label="Directional controls" role="group">
+<!-- Joystick (used by both fixed and float modes) -->
+<div id="joystick-wrap" aria-label="Joystick" role="group">
+    <div id="joystick-base">
+        <div id="joystick-stick"></div>
+    </div>
+</div>
+<button id="joy-side-toggle" class="side-toggle-btn" type="button" aria-label="Switch joystick side">⇄</button>
+
+<!-- D-pad -->
+<div id="dpad" class="right" aria-label="Directional controls" role="group">
     <div class="dpad-row">
         <div class="dpad-gap"></div>
-        <button class="dpad-btn" id="btn-up"    type="button" aria-label="Move up">▲</button>
+        <button class="dpad-btn" id="btn-up"    type="button" aria-label="Up">▲</button>
         <div class="dpad-gap"></div>
     </div>
     <div class="dpad-row">
-        <button class="dpad-btn" id="btn-left"  type="button" aria-label="Move left">◀</button>
+        <button class="dpad-btn" id="btn-left"  type="button" aria-label="Left">◀</button>
         <div class="dpad-gap"></div>
-        <button class="dpad-btn" id="btn-right" type="button" aria-label="Move right">▶</button>
+        <button class="dpad-btn" id="btn-right" type="button" aria-label="Right">▶</button>
     </div>
     <div class="dpad-row">
         <div class="dpad-gap"></div>
-        <button class="dpad-btn" id="btn-down"  type="button" aria-label="Move down">▼</button>
+        <button class="dpad-btn" id="btn-down"  type="button" aria-label="Down">▼</button>
         <div class="dpad-gap"></div>
     </div>
 </div>
-
-<button id="dpad-toggle" type="button">⇄</button>
+<button id="dpad-side-toggle" class="side-toggle-btn" type="button" aria-label="Switch D-pad side">⇄</button>
 
 <footer>C0 public domain</footer>
 
 <script>
-    // ── Refs ─────────────────────────────────────────────────────
-    const turtle      = document.getElementById('turtle');
-    const scoreEl     = document.getElementById('score');
-    const collectedEl = document.getElementById('collected');
-    const mannaEl     = document.getElementById('manna');
-    const mannaWrap   = document.getElementById('manna-wrap');
-    const headerEl    = document.querySelector('header');
-    const footerEl    = document.querySelector('footer');
-    const instructions= document.getElementById('instructions');
-    const helpBtn     = document.getElementById('help-btn');
-    const dpad        = document.getElementById('dpad');
-    const dpadToggle  = document.getElementById('dpad-toggle');
+    // ── Refs ──────────────────────────────────────────────────────
+    const turtle         = document.getElementById('turtle');
+    const scoreEl        = document.getElementById('score');
+    const collectedEl    = document.getElementById('collected');
+    const mannaEl        = document.getElementById('manna');
+    const mannaWrap      = document.getElementById('manna-wrap');
+    const headerEl       = document.querySelector('header');
+    const footerEl       = document.querySelector('footer');
+    const instructions   = document.getElementById('instructions');
+    const helpBtn        = document.getElementById('help-btn');
+    const joystickWrap   = document.getElementById('joystick-wrap');
+    const joystickBase   = document.getElementById('joystick-base');
+    const joystickStick  = document.getElementById('joystick-stick');
+    const joySideToggle  = document.getElementById('joy-side-toggle');
+    const dpadEl         = document.getElementById('dpad');
+    const dpadSideToggle = document.getElementById('dpad-side-toggle');
+    const ctrlBtns       = document.querySelectorAll('.ctrl-btn');
+
 
     // ── Help toggle ───────────────────────────────────────────────
     helpBtn.addEventListener('click', () => {
         const hidden = instructions.hidden;
         instructions.hidden = !hidden;
-        helpBtn.setAttribute('aria-expanded', hidden ? 'true' : 'false');
+        helpBtn.setAttribute('aria-expanded', String(!hidden));
         helpBtn.textContent = hidden ? '✕ Help' : '? Help';
     });
     document.addEventListener('click', e => {
@@ -267,39 +352,196 @@
         }
     });
 
-    // ── D-pad side ────────────────────────────────────────────────
-    let dpadSide = 'right'; // default, updated on show
-    let userPickedSide = false;
+    // ── Control mode ──────────────────────────────────────────────
+    let controlMode = 'keyboard';
 
-    function applyDpadSide(side) {
-        dpadSide = side;
-        dpad.classList.remove('left', 'right');
-        dpad.classList.add(side);
-        dpadToggle.setAttribute('aria-label',
-            `Switch D-pad to ${side === 'left' ? 'right' : 'left'} side`);
-    }
+    function setMode(mode) {
+        controlMode = mode;
+        ctrlBtns.forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
 
-    function showControls() {
-        const landscape = window.innerWidth > window.innerHeight;
-        dpad.style.display = 'block';
-        dpadToggle.style.display = 'block';
-        if (!userPickedSide) {
-            applyDpadSide(landscape ? 'right' : 'left');
+        // Hide everything
+        joystickWrap.style.display   = 'none';
+        joySideToggle.style.display  = 'none';
+        dpadEl.style.display         = 'none';
+        dpadSideToggle.style.display = 'none';
+
+        // Reset joy
+        joy.active = false; joy.dx = 0; joy.dy = 0;
+        joystickStick.style.transform = 'translate(-50%, -50%)';
+
+        if (mode === 'fixed-joy') {
+            positionFixedJoy();
+            joystickWrap.style.display  = 'block';
+            joySideToggle.style.display = 'block';
+            updateJoySideTogglePos();
+        }
+        // float-joy: shown dynamically on touch
+        if (mode === 'dpad4') {
+            dpadEl.style.display         = 'block';
+            dpadSideToggle.style.display = 'block';
+            updateDpadSideTogglePos();
         }
     }
 
-    dpadToggle.addEventListener('click', () => {
-        userPickedSide = true;
-        applyDpadSide(dpadSide === 'left' ? 'right' : 'left');
+    ctrlBtns.forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode)));
+
+    // ── Fixed joystick side ───────────────────────────────────────
+    let joySide = 'right', joyUserPicked = false;
+
+    function positionFixedJoy() {
+        joystickWrap.style.bottom = '48px';
+        joystickWrap.style.top   = 'auto';
+        joystickWrap.style.left  = joySide === 'left'  ? '16px' : 'auto';
+        joystickWrap.style.right = joySide === 'right' ? '16px' : 'auto';
+    }
+    function updateJoySideTogglePos() {
+        joySideToggle.style.left  = joySide === 'right' ? '16px' : 'auto';
+        joySideToggle.style.right = joySide === 'left'  ? '16px' : 'auto';
+    }
+
+    joySideToggle.addEventListener('click', () => {
+        joyUserPicked = true;
+        joySide = joySide === 'left' ? 'right' : 'left';
+        positionFixedJoy();
+        updateJoySideTogglePos();
     });
+
+    // ── D-pad side ────────────────────────────────────────────────
+    let dpadSide = 'right', dpadUserPicked = false;
+
+    function applyDpadSide(side) {
+        dpadSide = side;
+        dpadEl.classList.remove('left','right');
+        dpadEl.classList.add(side);
+    }
+    function updateDpadSideTogglePos() {
+        dpadSideToggle.style.left  = dpadSide === 'right' ? '16px' : 'auto';
+        dpadSideToggle.style.right = dpadSide === 'left'  ? '16px' : 'auto';
+    }
+
+    dpadSideToggle.addEventListener('click', () => {
+        dpadUserPicked = true;
+        applyDpadSide(dpadSide === 'left' ? 'right' : 'left');
+        updateDpadSideTogglePos();
+    });
+
+    // ── Joystick logic ────────────────────────────────────────────
+    const joy = { dx:0, dy:0, active:false, pointerId:null, originX:0, originY:0 };
+    const STICK_MAX = 35, BASE_HALF = 60;
+
+    function setStickPos(rawDx, rawDy) {
+        const dist = Math.hypot(rawDx, rawDy);
+        if (dist < 6) {
+            joystickStick.style.transform = 'translate(-50%, -50%)';
+            joy.dx = 0; joy.dy = 0; return;
+        }
+        const c = Math.min(dist, STICK_MAX);
+        const nx = rawDx / dist, ny = rawDy / dist;
+        joystickStick.style.transform =
+            `translate(calc(-50% + ${nx*c}px), calc(-50% + ${ny*c}px))`;
+        joy.dx = nx * (c / STICK_MAX);
+        joy.dy = ny * (c / STICK_MAX);
+    }
+
+    function resetJoy() {
+        joy.dx = 0; joy.dy = 0; joy.active = false; joy.pointerId = null;
+        joystickStick.style.transform = 'translate(-50%, -50%)';
+        if (controlMode === 'float-joy') joystickWrap.style.display = 'none';
+    }
+
+    // Fixed joy — events on base
+    joystickBase.addEventListener('pointerdown', e => {
+        if (controlMode !== 'fixed-joy' || joy.active) return;
+        e.preventDefault();
+        joy.active = true; joy.pointerId = e.pointerId;
+        joystickBase.setPointerCapture(e.pointerId);
+        if (!turtleActive) activate();
+        const r = joystickBase.getBoundingClientRect();
+        setStickPos(e.clientX - (r.left + r.width/2), e.clientY - (r.top + r.height/2));
+    });
+    joystickBase.addEventListener('pointermove', e => {
+        if (controlMode !== 'fixed-joy' || !joy.active || e.pointerId !== joy.pointerId) return;
+        e.preventDefault();
+        const r = joystickBase.getBoundingClientRect();
+        setStickPos(e.clientX - (r.left + r.width/2), e.clientY - (r.top + r.height/2));
+    });
+    joystickBase.addEventListener('pointerup',     e => { if (e.pointerId === joy.pointerId) resetJoy(); });
+    joystickBase.addEventListener('pointercancel', e => { if (e.pointerId === joy.pointerId) resetJoy(); });
+
+    // Float joy — events on document
+    document.addEventListener('pointerdown', e => {
+        if (controlMode !== 'float-joy') return;
+        if (e.target.closest('header, footer, #turtle, #instructions')) return;
+        if (joy.active) return;
+        e.preventDefault();
+        joy.active = true; joy.pointerId = e.pointerId;
+        const bx = clamp(e.clientX, BASE_HALF, window.innerWidth  - BASE_HALF);
+        const by = clamp(e.clientY, BASE_HALF, window.innerHeight - BASE_HALF);
+        joy.originX = bx; joy.originY = by;
+        joystickWrap.style.left   = (bx - BASE_HALF) + 'px';
+        joystickWrap.style.top    = (by - BASE_HALF) + 'px';
+        joystickWrap.style.bottom = 'auto';
+        joystickWrap.style.right  = 'auto';
+        joystickWrap.style.display = 'block';
+        if (!turtleActive) activate();
+        setStickPos(0, 0);
+    }, { passive: false });
+
+    document.addEventListener('pointermove', e => {
+        if (controlMode !== 'float-joy' || !joy.active || e.pointerId !== joy.pointerId) return;
+        e.preventDefault();
+        setStickPos(e.clientX - joy.originX, e.clientY - joy.originY);
+    }, { passive: false });
+
+    document.addEventListener('pointerup',     e => { if (controlMode === 'float-joy' && e.pointerId === joy.pointerId) resetJoy(); });
+    document.addEventListener('pointercancel', e => { if (controlMode === 'float-joy' && e.pointerId === joy.pointerId) resetJoy(); });
+
+    // ── D-pad buttons ─────────────────────────────────────────────
+    const dpadVecs = {
+        'btn-up':    { vx:  0, vy: -1 },
+        'btn-down':  { vx:  0, vy:  1 },
+        'btn-left':  { vx: -1, vy:  0 },
+        'btn-right': { vx:  1, vy:  0 },
+    };
+    const dpadPressed = {};
+
+    Object.keys(dpadVecs).forEach(id => {
+        const btn = document.getElementById(id);
+        if (!btn) return;
+        const press = e => {
+            e.preventDefault();
+            dpadPressed[id] = true;
+            btn.classList.add('pressed');
+            if (!turtleActive) activate();
+        };
+        const release = e => {
+            e.preventDefault();
+            dpadPressed[id] = false;
+            btn.classList.remove('pressed');
+        };
+        btn.addEventListener('touchstart',  press,   { passive: false });
+        btn.addEventListener('touchend',    release, { passive: false });
+        btn.addEventListener('touchcancel', release, { passive: false });
+        btn.addEventListener('mousedown',   press);
+        btn.addEventListener('mouseup',     release);
+        btn.addEventListener('mouseleave',  release);
+    });
+
+    function getDpadVec() {
+        let vx = 0, vy = 0;
+        for (const [id, v] of Object.entries(dpadVecs)) {
+            if (dpadPressed[id]) { vx += v.vx; vy += v.vy; }
+        }
+        return { vx, vy };
+    }
 
     // ── Game state ────────────────────────────────────────────────
     const COLLECTIBLES = [
         { symbol: '🌿', type: 'food',     manna: 1 },
         { symbol: '🍓', type: 'food',     manna: 2 },
-        { symbol: '@', type: 'food',     manna: 1 },
+        { symbol: '@',  type: 'food',     manna: 1 },
         { symbol: '💎', type: 'treasure', points: 3 },
-        { symbol: '$', type: 'treasure', points: 2 },
+        { symbol: '$',  type: 'treasure', points: 2 },
     ];
     const MANNA_MAX = 10;
     let score = 0, manna = 0, collected = {};
@@ -314,47 +556,35 @@
     }
 
     let b = getBounds();
-    let x = b.w / 2;
-    let y = (b.hBottom + b.fTop) / 2;
-    let angle = 0;
-    const speed = 4;
-    const keys = {};
+    let x = b.w / 2, y = (b.hBottom + b.fTop) / 2, angle = 0;
+    const speed = 4, keys = {};
     let turtleActive = false;
 
     function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
-
-    function updateScore(delta) {
-        score += delta;
-        scoreEl.textContent = `Score: ${score}`;
-    }
-
-    function updateManna(delta) {
-        manna = clamp(manna + delta, 0, MANNA_MAX);
+    function updateScore(d) { score += d; scoreEl.textContent = `Score: ${score}`; }
+    function updateManna(d) {
+        manna = clamp(manna + d, 0, MANNA_MAX);
         mannaEl.style.width = `${(manna / MANNA_MAX) * 100}%`;
         mannaWrap.setAttribute('aria-valuenow', manna);
     }
-
     function collectItem(item) {
         if (item.type === 'food')     updateManna(item.manna);
         if (item.type === 'treasure') updateScore(item.points);
         collected[item.symbol] = (collected[item.symbol] ?? 0) + 1;
         collectedEl.textContent = 'Collected: ' +
-            Object.entries(collected).map(([s, n]) => `${s}x${n}`).join('  ');
+            Object.entries(collected).map(([s,n]) => `${s}x${n}`).join('  ');
     }
 
     // ── Collectibles ──────────────────────────────────────────────
-    const NUM_COLLECTIBLES = 3;
-    const slots = [];
+    const NUM_COLLECTIBLES = 3, slots = [];
 
     function randomPos() {
-        const b = getBounds();
-        const m = 40;
+        const b = getBounds(), m = 40;
         return {
             cx: clamp(Math.random() * b.w, m, b.w - m),
             cy: clamp(Math.random() * b.h, b.hBottom + m, b.fTop - m),
         };
     }
-
     function initCollectibles() {
         for (let i = 0; i < NUM_COLLECTIBLES; i++) {
             const el = document.createElement('div');
@@ -363,21 +593,17 @@
             const item = COLLECTIBLES[Math.floor(Math.random() * COLLECTIBLES.length)];
             const { cx, cy } = randomPos();
             el.textContent = item.symbol;
-            el.style.left = cx + 'px';
-            el.style.top  = cy + 'px';
+            el.style.left = cx + 'px'; el.style.top = cy + 'px';
             slots.push({ el, item, cx, cy });
         }
     }
-
     function replaceSlot(slot) {
         slot.item = COLLECTIBLES[Math.floor(Math.random() * COLLECTIBLES.length)];
         const { cx, cy } = randomPos();
         slot.cx = cx; slot.cy = cy;
         slot.el.textContent = slot.item.symbol;
-        slot.el.style.left = cx + 'px';
-        slot.el.style.top  = cy + 'px';
+        slot.el.style.left = cx + 'px'; slot.el.style.top = cy + 'px';
     }
-
     function showPopup(text, px, py) {
         const pop = document.createElement('div');
         pop.textContent = text;
@@ -386,7 +612,6 @@
         document.body.appendChild(pop);
         setTimeout(() => pop.remove(), 800);
     }
-
     function checkCollect() {
         for (const slot of slots) {
             if (Math.hypot(x - slot.cx, y - slot.cy) < 40) {
@@ -403,14 +628,13 @@
         turtleActive = true;
         turtle.classList.add('active');
         turtle.setAttribute('role', 'application');
-        turtle.setAttribute('aria-label', 'Turtle active. Use arrow keys or D-pad to move. Escape to release.');
+        turtle.setAttribute('aria-label', 'Turtle active. Escape to stop.');
     }
-
     function deactivate() {
         turtleActive = false;
         turtle.classList.remove('active');
         turtle.setAttribute('role', 'img');
-        turtle.setAttribute('aria-label', 'Turtle. Tap or click to activate, then use arrow keys or D-pad to move.');
+        turtle.setAttribute('aria-label', 'Turtle. Tap to activate.');
     }
 
     turtle.addEventListener('click', activate);
@@ -432,51 +656,32 @@
     });
     document.addEventListener('keyup', e => { keys[e.key] = false; });
 
-    // ── D-pad buttons ─────────────────────────────────────────────
-    const dpadMap = {
-        'btn-up':    'ArrowUp',
-        'btn-down':  'ArrowDown',
-        'btn-left':  'ArrowLeft',
-        'btn-right': 'ArrowRight',
-    };
-
-    Object.entries(dpadMap).forEach(([id, key]) => {
-        const btn = document.getElementById(id);
-        const press = e => {
-            e.preventDefault();
-            keys[key] = true;
-            btn.classList.add('pressed');
-            if (!turtleActive) activate();
-        };
-        const release = e => {
-            e.preventDefault();
-            keys[key] = false;
-            btn.classList.remove('pressed');
-        };
-        btn.addEventListener('touchstart',  press,   { passive: false });
-        btn.addEventListener('touchend',    release, { passive: false });
-        btn.addEventListener('touchcancel', release, { passive: false });
-        btn.addEventListener('mousedown',   press);
-        btn.addEventListener('mouseup',     release);
-        btn.addEventListener('mouseleave',  release);
-    });
-
-    // ── Show controls on first touch (mobile only) ───────────────
-    const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
-    if (isTouchDevice) {
-        window.addEventListener('touchstart', () => {
-            showControls();
-            activate();
-        }, { once: true });
-    }
-
     // ── Main loop ─────────────────────────────────────────────────
     function update() {
         if (turtleActive) {
-            if (keys['ArrowRight'] || keys['d'] || keys['D']) { x += speed; angle = 0;   }
-            if (keys['ArrowLeft']  || keys['a'] || keys['A']) { x -= speed; angle = 180; }
-            if (keys['ArrowUp']    || keys['w'] || keys['W']) { y -= speed; angle = -90; }
-            if (keys['ArrowDown']  || keys['s'] || keys['S']) { y += speed; angle = 90;  }
+            let vx = 0, vy = 0;
+
+            if (controlMode === 'keyboard') {
+                if (keys['ArrowRight'] || keys['d'] || keys['D']) vx += 1;
+                if (keys['ArrowLeft']  || keys['a'] || keys['A']) vx -= 1;
+                if (keys['ArrowDown']  || keys['s'] || keys['S']) vy += 1;
+                if (keys['ArrowUp']    || keys['w'] || keys['W']) vy -= 1;
+            }
+            if (controlMode === 'fixed-joy' || controlMode === 'float-joy') {
+                vx = joy.dx; vy = joy.dy;
+            }
+            if (controlMode === 'dpad4') {
+                const d = getDpadVec();
+                vx = d.vx; vy = d.vy;
+            }
+
+            const len = Math.hypot(vx, vy);
+            if (len > 1) { vx /= len; vy /= len; }
+            if (len > 0.05) {
+                x += vx * speed;
+                y += vy * speed;
+                angle = Math.atan2(vy, vx) * (180 / Math.PI);
+            }
 
             const b = getBounds();
             x = clamp(x, 30, b.w - 30);
@@ -499,24 +704,29 @@
             slot.el.style.left = slot.cx + 'px';
             slot.el.style.top  = slot.cy + 'px';
         }
-        // Auto-switch dpad side on orientation change
-        if (!userPickedSide) {
-            applyDpadSide(b.w > b.h ? 'right' : 'left');
-        }
-        // Show dpad in landscape on touch devices
-        if (isTouchDevice && b.w > b.h) showControls();
+        const landscape = b.w > b.h;
+        if (!joyUserPicked  && controlMode === 'fixed-joy') { joySide  = landscape ? 'right' : 'left'; positionFixedJoy(); updateJoySideTogglePos(); }
+        if (!dpadUserPicked && controlMode === 'dpad4') { applyDpadSide(landscape ? 'right' : 'left'); updateDpadSideTogglePos(); }
     }
 
     window.addEventListener('resize', onResize);
-    if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', onResize);
-    }
+    if (window.visualViewport) window.visualViewport.addEventListener('resize', onResize);
     screen.orientation?.addEventListener('change', onResize);
 
     // ── Init ──────────────────────────────────────────────────────
+    const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
+
+    // On touch devices: hide the Keys option and default to dpad4
+    if (isTouchDevice) {
+        document.querySelector('[data-mode="keyboard"]').classList.add('touch-hidden');
+        window.addEventListener('touchstart', () => {
+            if (controlMode === 'keyboard') setMode('dpad4');
+        }, { once: true });
+    }
+
+    applyDpadSide('right');
+    updateDpadSideTogglePos();
     initCollectibles();
-    // Show dpad immediately if already in landscape on touch device
-    if (isTouchDevice && window.innerWidth > window.innerHeight) showControls();
     update();
 </script>
 </body>
