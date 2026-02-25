@@ -725,10 +725,10 @@
     // ── Init ──────────────────────────────────────────────────────
     const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
 
-    // On first touch on a touch device, switch from keyboard to float-joy
+    // On first touch on a touch device, switch from keyboard to dpad4
     if (isTouchDevice) {
         window.addEventListener('touchstart', () => {
-            if (controlMode === 'keyboard') setMode('float-joy');
+            if (controlMode === 'keyboard') setMode('dpad4');
         }, { once: true });
     }
 
