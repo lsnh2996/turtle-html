@@ -1,0 +1,526 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Turtle Game</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: sans-serif;
+            overflow: hidden;
+            background: #f5f5f5;
+            height: 100dvh;
+        }
+
+        header {
+            background: #333;
+            color: white;
+            padding: 0.6rem 1rem;
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        #hud {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+            margin-left: auto;
+            font-size: 0.85rem;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        #manna-wrap {
+            width: 80px; height: 10px;
+            border: 1px solid #aaa;
+            border-radius: 5px;
+            overflow: hidden;
+            background: #555;
+        }
+
+        #manna {
+            height: 100%; width: 0%;
+            background: linear-gradient(90deg, #4caf50, #8bc34a);
+            transition: width 0.2s ease;
+        }
+
+        footer {
+            background: #eee;
+            border-top: 1px solid #ccc;
+            padding: 0.1rem 0.75rem;
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            z-index: 200;
+            font-size: 0.7rem;
+            color: #555;
+        }
+
+        #help-btn {
+            background: transparent;
+            border: 1px solid #aaa;
+            color: white;
+            border-radius: 4px;
+            padding: 0.2rem 0.5rem;
+            cursor: pointer;
+            font-size: 0.8rem;
+            white-space: nowrap;
+        }
+        #help-btn:hover { background: rgba(255,255,255,0.15); }
+
+        #instructions {
+            position: fixed;
+            top: 52px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255,255,255,0.97);
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 0.6rem 1.2rem;
+            text-align: center;
+            color: #444;
+            font-size: 0.85rem;
+            line-height: 1.8;
+            z-index: 150;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+            white-space: nowrap;
+        }
+        #instructions kbd {
+            background: #eee;
+            border: 1px solid #767676;
+            border-radius: 4px;
+            padding: 1px 5px;
+            font-size: 0.8rem;
+            font-family: monospace;
+        }
+
+        #turtle {
+            position: fixed;
+            top: 0; left: 0;
+            z-index: 100;
+            cursor: pointer;
+            overflow: visible;
+            touch-action: none;
+        }
+        #turtle:focus { outline: 3px solid #4caf50; outline-offset: 4px; }
+        #turtle.active { outline: none; }
+
+        /* D-pad */
+        #dpad {
+            position: fixed;
+            bottom: 48px;
+            z-index: 300;
+            user-select: none;
+            display: none;
+        }
+        #dpad.left  { left: 16px; }
+        #dpad.right { right: 16px; }
+
+        .dpad-row {
+            display: flex;
+            justify-content: center;
+        }
+
+        .dpad-btn {
+            width: 56px; height: 56px;
+            background: transparent;
+            border: 2px solid #555;
+            border-radius: 10px;
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            touch-action: none;
+            -webkit-tap-highlight-color: transparent;
+            color: black;
+            margin: 3px;
+        }
+        .dpad-btn:active,
+        .dpad-btn.pressed {
+            background: #2d6e30;
+            border-color: #4caf50;
+        }
+        .dpad-gap {
+            width: 56px; height: 56px;
+            margin: 3px;
+        }
+
+        /* Toggle button always on opposite side from dpad */
+        #dpad-toggle {
+            position: fixed;
+            bottom: 80px;
+            z-index: 300;
+            display: none;
+            background: #1a1a1a;
+            border: 2px solid #555;
+            border-radius: 10px;
+            color: white;
+            font-size: 1rem;
+            padding: 0.4rem 0.7rem;
+            cursor: pointer;
+            touch-action: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        #dpad-toggle:active { background: #2d6e30; border-color: #4caf50; }
+        #dpad.left  + #dpad-toggle { left: auto; right: 16px; }
+        #dpad.right + #dpad-toggle { left: 16px; right: auto; }
+
+        @keyframes floatUp {
+            0%   { opacity: 1; transform: translate(-50%, 0); }
+            100% { opacity: 0; transform: translate(-50%, -50px); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            @keyframes floatUp { 0%, 100% { opacity: 0; } }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <span>🐢</span>
+    <button id="help-btn" type="button" aria-expanded="false" aria-controls="instructions">? Help</button>
+    <div id="hud">
+        <span id="score" aria-live="polite">Score: 0</span>
+        <span id="collected" aria-live="polite">Collected: </span>
+        <div id="manna-wrap" role="progressbar" aria-valuemin="0" aria-valuemax="10" aria-valuenow="0" aria-label="Manna">
+            <div id="manna"></div>
+        </div>
+    </div>
+</header>
+
+<div id="instructions" role="status" hidden>
+    <strong>How to play:</strong>
+    Tap the 🐢 turtle to activate it.<br>
+    Click the ?Help button in the top left to hide these instructions<br>
+    Press <kbd>Esc</kbd> or tap elsewhere to stop.
+</div>
+
+<svg id="turtle"
+     xmlns="http://www.w3.org/2000/svg"
+     viewBox="100 30 480 340"
+     width="60" height="40"
+     role="img"
+     tabindex="0"
+     aria-label="Turtle. Tap or click to activate, then use arrow keys or D-pad to move.">
+    <polygon fill="lightgreen" stroke="#006400" stroke-width="15" points="
+        536,200 504,168 440,184 392,136 424,88 408,56
+        360,104 296,88 232,120 184,72 152,104 200,136
+        168,200 200,264 152,296 184,328 232,280 296,312
+        360,296 408,344 424,312 392,264 440,216 504,232
+    "/>
+</svg>
+
+<div id="dpad" aria-label="Directional controls" role="group">
+    <div class="dpad-row">
+        <div class="dpad-gap"></div>
+        <button class="dpad-btn" id="btn-up"    type="button" aria-label="Move up">▲</button>
+        <div class="dpad-gap"></div>
+    </div>
+    <div class="dpad-row">
+        <button class="dpad-btn" id="btn-left"  type="button" aria-label="Move left">◀</button>
+        <div class="dpad-gap"></div>
+        <button class="dpad-btn" id="btn-right" type="button" aria-label="Move right">▶</button>
+    </div>
+    <div class="dpad-row">
+        <div class="dpad-gap"></div>
+        <button class="dpad-btn" id="btn-down"  type="button" aria-label="Move down">▼</button>
+        <div class="dpad-gap"></div>
+    </div>
+</div>
+
+<button id="dpad-toggle" type="button">⇄</button>
+
+<footer>C0 public domain</footer>
+
+<script>
+    // ── Refs ─────────────────────────────────────────────────────
+    const turtle      = document.getElementById('turtle');
+    const scoreEl     = document.getElementById('score');
+    const collectedEl = document.getElementById('collected');
+    const mannaEl     = document.getElementById('manna');
+    const mannaWrap   = document.getElementById('manna-wrap');
+    const headerEl    = document.querySelector('header');
+    const footerEl    = document.querySelector('footer');
+    const instructions= document.getElementById('instructions');
+    const helpBtn     = document.getElementById('help-btn');
+    const dpad        = document.getElementById('dpad');
+    const dpadToggle  = document.getElementById('dpad-toggle');
+
+    // ── Help toggle ───────────────────────────────────────────────
+    helpBtn.addEventListener('click', () => {
+        const hidden = instructions.hidden;
+        instructions.hidden = !hidden;
+        helpBtn.setAttribute('aria-expanded', hidden ? 'true' : 'false');
+        helpBtn.textContent = hidden ? '✕ Help' : '? Help';
+    });
+    document.addEventListener('click', e => {
+        if (!instructions.hidden && !instructions.contains(e.target) && e.target !== helpBtn) {
+            instructions.hidden = true;
+            helpBtn.setAttribute('aria-expanded', 'false');
+            helpBtn.textContent = '? Help';
+        }
+    });
+
+    // ── D-pad side ────────────────────────────────────────────────
+    let dpadSide = 'right'; // default, updated on show
+    let userPickedSide = false;
+
+    function applyDpadSide(side) {
+        dpadSide = side;
+        dpad.classList.remove('left', 'right');
+        dpad.classList.add(side);
+        dpadToggle.setAttribute('aria-label',
+            `Switch D-pad to ${side === 'left' ? 'right' : 'left'} side`);
+    }
+
+    function showControls() {
+        const landscape = window.innerWidth > window.innerHeight;
+        dpad.style.display = 'block';
+        dpadToggle.style.display = 'block';
+        if (!userPickedSide) {
+            applyDpadSide(landscape ? 'right' : 'left');
+        }
+    }
+
+    dpadToggle.addEventListener('click', () => {
+        userPickedSide = true;
+        applyDpadSide(dpadSide === 'left' ? 'right' : 'left');
+    });
+
+    // ── Game state ────────────────────────────────────────────────
+    const COLLECTIBLES = [
+        { symbol: '🌿', type: 'food',     manna: 1 },
+        { symbol: '🍓', type: 'food',     manna: 2 },
+        { symbol: '@', type: 'food',     manna: 1 },
+        { symbol: '💎', type: 'treasure', points: 3 },
+        { symbol: '$', type: 'treasure', points: 2 },
+    ];
+    const MANNA_MAX = 10;
+    let score = 0, manna = 0, collected = {};
+
+    function getBounds() {
+        return {
+            hBottom: headerEl.getBoundingClientRect().bottom,
+            fTop:    footerEl.getBoundingClientRect().top,
+            w: window.innerWidth,
+            h: window.innerHeight,
+        };
+    }
+
+    let b = getBounds();
+    let x = b.w / 2;
+    let y = (b.hBottom + b.fTop) / 2;
+    let angle = 0;
+    const speed = 4;
+    const keys = {};
+    let turtleActive = false;
+
+    function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+    function updateScore(delta) {
+        score += delta;
+        scoreEl.textContent = `Score: ${score}`;
+    }
+
+    function updateManna(delta) {
+        manna = clamp(manna + delta, 0, MANNA_MAX);
+        mannaEl.style.width = `${(manna / MANNA_MAX) * 100}%`;
+        mannaWrap.setAttribute('aria-valuenow', manna);
+    }
+
+    function collectItem(item) {
+        if (item.type === 'food')     updateManna(item.manna);
+        if (item.type === 'treasure') updateScore(item.points);
+        collected[item.symbol] = (collected[item.symbol] ?? 0) + 1;
+        collectedEl.textContent = 'Collected: ' +
+            Object.entries(collected).map(([s, n]) => `${s}x${n}`).join('  ');
+    }
+
+    // ── Collectibles ──────────────────────────────────────────────
+    const NUM_COLLECTIBLES = 3;
+    const slots = [];
+
+    function randomPos() {
+        const b = getBounds();
+        const m = 40;
+        return {
+            cx: clamp(Math.random() * b.w, m, b.w - m),
+            cy: clamp(Math.random() * b.h, b.hBottom + m, b.fTop - m),
+        };
+    }
+
+    function initCollectibles() {
+        for (let i = 0; i < NUM_COLLECTIBLES; i++) {
+            const el = document.createElement('div');
+            el.style.cssText = 'position:fixed;font-size:1.8rem;pointer-events:none;z-index:100;transform:translate(-50%,-50%);';
+            document.body.appendChild(el);
+            const item = COLLECTIBLES[Math.floor(Math.random() * COLLECTIBLES.length)];
+            const { cx, cy } = randomPos();
+            el.textContent = item.symbol;
+            el.style.left = cx + 'px';
+            el.style.top  = cy + 'px';
+            slots.push({ el, item, cx, cy });
+        }
+    }
+
+    function replaceSlot(slot) {
+        slot.item = COLLECTIBLES[Math.floor(Math.random() * COLLECTIBLES.length)];
+        const { cx, cy } = randomPos();
+        slot.cx = cx; slot.cy = cy;
+        slot.el.textContent = slot.item.symbol;
+        slot.el.style.left = cx + 'px';
+        slot.el.style.top  = cy + 'px';
+    }
+
+    function showPopup(text, px, py) {
+        const pop = document.createElement('div');
+        pop.textContent = text;
+        pop.style.cssText = `position:fixed;left:${px}px;top:${py}px;font-size:1.8rem;
+            pointer-events:none;z-index:999;animation:floatUp 0.8s ease forwards;`;
+        document.body.appendChild(pop);
+        setTimeout(() => pop.remove(), 800);
+    }
+
+    function checkCollect() {
+        for (const slot of slots) {
+            if (Math.hypot(x - slot.cx, y - slot.cy) < 40) {
+                collectItem(slot.item);
+                showPopup(slot.item.symbol, slot.cx, slot.cy);
+                replaceSlot(slot);
+                break;
+            }
+        }
+    }
+
+    // ── Activate / deactivate ─────────────────────────────────────
+    function activate() {
+        turtleActive = true;
+        turtle.classList.add('active');
+        turtle.setAttribute('role', 'application');
+        turtle.setAttribute('aria-label', 'Turtle active. Use arrow keys or D-pad to move. Escape to release.');
+    }
+
+    function deactivate() {
+        turtleActive = false;
+        turtle.classList.remove('active');
+        turtle.setAttribute('role', 'img');
+        turtle.setAttribute('aria-label', 'Turtle. Tap or click to activate, then use arrow keys or D-pad to move.');
+    }
+
+    turtle.addEventListener('click', activate);
+    turtle.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { activate(); e.preventDefault(); }
+    });
+    turtle.addEventListener('blur', deactivate);
+
+    // ── Keyboard ──────────────────────────────────────────────────
+    document.addEventListener('keydown', e => {
+        if (!turtleActive) return;
+        if (e.key === 'Escape') { deactivate(); return; }
+        keys[e.key] = true;
+        if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',
+             'w','a','s','d','W','A','S','D'].includes(e.key)) {
+            turtle.style.outline = 'none';
+            e.preventDefault();
+        }
+    });
+    document.addEventListener('keyup', e => { keys[e.key] = false; });
+
+    // ── D-pad buttons ─────────────────────────────────────────────
+    const dpadMap = {
+        'btn-up':    'ArrowUp',
+        'btn-down':  'ArrowDown',
+        'btn-left':  'ArrowLeft',
+        'btn-right': 'ArrowRight',
+    };
+
+    Object.entries(dpadMap).forEach(([id, key]) => {
+        const btn = document.getElementById(id);
+        const press = e => {
+            e.preventDefault();
+            keys[key] = true;
+            btn.classList.add('pressed');
+            if (!turtleActive) activate();
+        };
+        const release = e => {
+            e.preventDefault();
+            keys[key] = false;
+            btn.classList.remove('pressed');
+        };
+        btn.addEventListener('touchstart',  press,   { passive: false });
+        btn.addEventListener('touchend',    release, { passive: false });
+        btn.addEventListener('touchcancel', release, { passive: false });
+        btn.addEventListener('mousedown',   press);
+        btn.addEventListener('mouseup',     release);
+        btn.addEventListener('mouseleave',  release);
+    });
+
+    // ── Show controls on first touch (mobile only) ───────────────
+    const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
+    if (isTouchDevice) {
+        window.addEventListener('touchstart', () => {
+            showControls();
+            activate();
+        }, { once: true });
+    }
+
+    // ── Main loop ─────────────────────────────────────────────────
+    function update() {
+        if (turtleActive) {
+            if (keys['ArrowRight'] || keys['d'] || keys['D']) { x += speed; angle = 0;   }
+            if (keys['ArrowLeft']  || keys['a'] || keys['A']) { x -= speed; angle = 180; }
+            if (keys['ArrowUp']    || keys['w'] || keys['W']) { y -= speed; angle = -90; }
+            if (keys['ArrowDown']  || keys['s'] || keys['S']) { y += speed; angle = 90;  }
+
+            const b = getBounds();
+            x = clamp(x, 30, b.w - 30);
+            y = clamp(y, b.hBottom + 20, b.fTop - 20);
+            checkCollect();
+        }
+        turtle.style.transform = `translate(calc(${x}px - 50%), calc(${y}px - 50%)) rotate(${angle}deg)`;
+        requestAnimationFrame(update);
+    }
+
+    // ── Resize ────────────────────────────────────────────────────
+    function onResize() {
+        const b = getBounds();
+        x = clamp(x, 30, b.w - 30);
+        y = clamp(y, b.hBottom + 20, b.fTop - 20);
+        for (const slot of slots) {
+            const m = 40;
+            slot.cx = clamp(slot.cx, m, b.w - m);
+            slot.cy = clamp(slot.cy, b.hBottom + m, b.fTop - m);
+            slot.el.style.left = slot.cx + 'px';
+            slot.el.style.top  = slot.cy + 'px';
+        }
+        // Auto-switch dpad side on orientation change
+        if (!userPickedSide) {
+            applyDpadSide(b.w > b.h ? 'right' : 'left');
+        }
+        // Show dpad in landscape on touch devices
+        if (isTouchDevice && b.w > b.h) showControls();
+    }
+
+    window.addEventListener('resize', onResize);
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', onResize);
+    }
+    screen.orientation?.addEventListener('change', onResize);
+
+    // ── Init ──────────────────────────────────────────────────────
+    initCollectibles();
+    // Show dpad immediately if already in landscape on touch device
+    if (isTouchDevice && window.innerWidth > window.innerHeight) showControls();
+    update();
+    showControls(); // Show controls on desktop by default
+    instructions.hidden = false; // Show instructions on first load
+</script>
+</body>
+</html>
