@@ -1,0 +1,13 @@
+<svg id="turtle"
+     xmlns="http://www.w3.org/2000/svg"
+     viewBox="100 30 480 340"
+     width="60" height="40"
+     role="img" tabindex="0"
+     aria-label="Turtle. Tap or click to activate.">
+    <polygon fill="lightgreen" stroke="#006400" stroke-width="15" points="
+        536,200 504,168 440,184 392,136 424,88 408,56
+        360,104 296,88 232,120 184,72 152,104 200,136
+        168,200 200,264 152,296 184,328 232,280 296,312
+        360,296 408,344 424,312 392,264 440,216 504,232
+    "/>
+</svg>
